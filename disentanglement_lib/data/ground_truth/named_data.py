@@ -26,7 +26,7 @@ import gin.tf
 
 
 @gin.configurable("dataset")
-def get_named_ground_truth_data(name):
+def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
   """Returns ground truth data set based on name.
 
   Args:
@@ -38,14 +38,27 @@ def get_named_ground_truth_data(name):
 
   if name == "dsprites_full":
     return dsprites.DSprites([1, 2, 3, 4, 5])
+  elif name == "correlated_dsprites_full":
+    return dsprites.CorrelatedDSprites([1, 2, 3, 4, 5], corr_indices, corr_type)
   elif name == "dsprites_noshape":
     return dsprites.DSprites([2, 3, 4, 5])
+  elif name == "correlated_dsprites_noshape":
+    return dsprites.CorrelatedDSprites([2, 3, 4, 5], corr_indices, corr_type)
   elif name == "color_dsprites":
     return dsprites.ColorDSprites([1, 2, 3, 4, 5])
+  elif name == "correlated_color_dsprites":
+    return dsprites.CorrelatedColorDSprites([1, 2, 3, 4, 5], corr_indices,
+                                            corr_type)
   elif name == "noisy_dsprites":
     return dsprites.NoisyDSprites([1, 2, 3, 4, 5])
+  elif name == "correlated_noisy_dsprites":
+    return dsprites.CorrelatedNoisyDSprites([1, 2, 3, 4, 5], corr_indices,
+                                            corr_type)
   elif name == "scream_dsprites":
     return dsprites.ScreamDSprites([1, 2, 3, 4, 5])
+  elif name == "correlated_scream_dsprites":
+    return dsprites.CorrelatedScreamDSprites([1, 2, 3, 4, 5], corr_indices,
+                                             corr_type)
   elif name == "smallnorb":
     return norb.SmallNORB()
   elif name == "cars3d":
@@ -55,4 +68,4 @@ def get_named_ground_truth_data(name):
   elif name == "dummy_data":
     return dummy_data.DummyData()
   else:
-    raise ValueError("Invalid data set name.")
+    raise ValueError("Invalid data set name: " + name + ".")

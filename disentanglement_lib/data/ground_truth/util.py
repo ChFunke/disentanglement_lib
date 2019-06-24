@@ -74,6 +74,156 @@ class SplitDiscreteStateSpace(object):
     return random_state.randint(self.factor_sizes[i], size=num)
 
 
+class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
+  """State space with two correlated latent factors.
+
+  Pick two latent factor indices to be correlated
+  Args:
+    corr_indices: The two latent factor indices to correalte.
+    corr_type: plane, ellipse, or line (cf. Chen et al 2018 section 6.1)
+    corr_amount: Relative amount to corr the log probability.
+
+  Raises:
+    ValueError: if an invalid corr type or corr indices are provided.
+  """
+
+  def __init__(self, factor_sizes, latent_factor_indices, corr_indices,
+               corr_type):
+    lfi = latent_factor_indices
+    super(CorrelatedSplitDiscreteStateSpace, self).__init__(factor_sizes, lfi)
+
+    if len(corr_indices) != 2 or corr_indices[0] == corr_indices[1]:
+      raise ValueError('Invalid corr indices given.')
+
+    for ci in corr_indices:
+      if ci == 0:
+        msg = 'Correlating the 0th factor (color) is not currently supported.'
+        raise ValueError(msg)
+
+      if not ci in latent_factor_indices:
+        msg = 'Invalid corr_indices: one of the specified indices is not ' + \
+          'a member of the latent_factor_indices.'
+        raise ValueError(msg)
+
+    self.corr_indices = corr_indices
+    self.corr_type = corr_type
+    self.joint_prob = self._get_joint_prob()
+
+  def _get_joint_prob(self):
+    corr_factor_sizes = self.factor_sizes[self.corr_indices]
+
+    if self.corr_type == 'plane':  # equivalent to Chen et al 2018 type B
+      bias = 0.5  # sets diff between min and max prob
+      unnormalized_marg_prob_0 = np.linspace(0., 1., corr_factor_sizes[0])
+      unnormalized_marg_prob_0 += bias
+      unnormalized_marg_prob_1 = np.linspace(0., 1., corr_factor_sizes[1])
+      unnormalized_marg_prob_1 += bias
+      unnormalized_joint_prob = np.outer(
+        unnormalized_marg_prob_0, unnormalized_marg_prob_1
+      )
+
+    elif self.corr_type == 'ellipse':  # equivalent to Chen et al 2018 type C
+      import cv2
+
+      for sfs in corr_factor_sizes:
+        if sfs < 12:
+          from warnings import warn
+          msg = 'Ellipse corr type (C) not recommended for factors of variation ' + \
+                'with fewer than 12 categories.'
+          warn(msg)
+
+      n_x, n_y = corr_factor_sizes
+
+      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
+
+      center_x = n_x // 2
+      center_y = n_y // 2
+
+      r_maj = n_x // 4
+      r_min = n_y // 4
+
+      width = 1  # this will get smoothed out later
+
+      cv2.ellipse(unnormalized_joint_prob, (center_y, center_x), (r_maj, r_min), 90, 0, 360,
+                  255, width)
+
+      kernel_width = min(corr_factor_sizes) // 5
+      if not kernel_width % 2:  # kernels widths must be odd
+        kernel_width += 1
+
+      unnormalized_joint_prob = cv2.GaussianBlur(
+        unnormalized_joint_prob, (kernel_width, kernel_width),0)
+      unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
+
+    elif self.corr_type == 'line':  # equivalent to Chen et al 2018 type D
+      import cv2
+
+      for sfs in corr_factor_sizes:
+        if sfs < 12:
+          from warnings import warn
+          msg = 'Line corr type (C) not recommended for factors of variation ' \
+                + 'with fewer than 12 categories.'
+          warn(msg)
+
+
+      # Create a black image
+      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
+
+      width = 2  # this will get smoothed out later
+
+      offset = corr_factor_sizes[0] // 6
+      start = (0, offset)
+      end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
+
+      cv2.line(unnormalized_joint_prob , start, end, 255, width)
+
+      kernel_width = min(corr_factor_sizes) // 5
+      if not kernel_width % 2:  # kernels widths must be odd
+        kernel_width += 1
+
+      unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob,(kernel_width, kernel_width),0)
+      unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
+
+    else:
+      raise ValueError("Invalid corr type.")
+
+    # normalize
+    joint_prob = unnormalized_joint_prob / unnormalized_joint_prob.sum()
+
+    return joint_prob
+
+  def _sample_correlated_factors(self, num, random_state):
+
+    corr_factor_sizes = self.factor_sizes[self.corr_indices]
+    n_x, n_y = corr_factor_sizes
+    pairs = np.indices(dimensions=(n_x, n_y))
+    pairs = pairs.reshape(2, -1).T
+
+    inds = random_state.choice(np.arange(n_x * n_y),
+                               p=self.joint_prob.reshape(-1),
+                               size=num, replace=True)
+    samps = pairs[inds]
+
+    return samps
+
+  def sample_latent_factors(self, num, random_state):
+    """Sample a batch of the latent factors."""
+    factors = np.zeros(
+        shape=(num, len(self.latent_factor_indices)), dtype=np.int64)
+
+    correlated_samples  = self._sample_correlated_factors(num, random_state)
+    # figure out how to properly index the array factors
+    idx = np.argwhere(np.isin(self.latent_factor_indices, self.corr_indices))
+    idx = idx.flatten()
+    factors[:, idx] = correlated_samples
+
+    for pos, i in enumerate(self.latent_factor_indices):
+      if not i in self.corr_indices:
+        factors[:, pos] = self._sample_factor(i, num, random_state)
+
+    return factors
+
+
 class StateSpaceAtomIndex(object):
   """Index mapping from features to positions of state space atoms."""
 

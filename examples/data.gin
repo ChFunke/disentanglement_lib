@@ -1,0 +1,5 @@
+# coding=utf-8
+
+dataset.name = "dsprites_full"
+get_dataset_loader.batch_size = 64
+get_dataset_loader.seed = 0

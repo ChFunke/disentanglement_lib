@@ -196,3 +196,37 @@ class ScreamDSprites(DSprites):
       background[mask] = 1 - background[mask]
       observations[i] = background
     return observations
+
+
+class CorrelatedDSprites(DSprites):
+  """Same as DSprites, but two of the latent factors correlate."""
+  def __init__(self, latent_factor_indices=None, corr_indices=[3, 4],
+               corr_type='plane'):
+    super(CorrelatedDSprites, self).__init__(latent_factor_indices)
+    self.state_space = util.CorrelatedSplitDiscreteStateSpace(
+      self.factor_sizes, self.latent_factor_indices, corr_indices, corr_type)
+
+
+class CorrelatedColorDSprites(CorrelatedDSprites, ColorDSprites):
+  """Same as ColorDSprites, but two of the latent factors correlate."""
+  def __init__(self, latent_factor_indices=None, corr_indices=[3, 4],
+               corr_type='plane'):
+    super(CorrelatedColorDSprites, self).__init__(latent_factor_indices,
+                                                  corr_indices, corr_type)
+
+
+class CorrelatedNoisyDSprites(CorrelatedDSprites, NoisyDSprites):
+  """Same as NoisyDSprites, but two of the latent factors correlate."""
+  def __init__(self, latent_factor_indices=None, corr_indices=[3, 4],
+               corr_type='plane'):
+    super(CorrelatedNoisyDSprites, self).__init__(latent_factor_indices,
+                                                  corr_indices, corr_type)
+
+
+class CorrelatedScreamDSprites(CorrelatedDSprites, ScreamDSprites):
+  """Same as ScreamDSprites, but two of the latent factors correlate."""
+  def __init__(self, latent_factor_indices=None, corr_indices=[3, 4],
+               corr_type='plane'):
+    super(CorrelatedScreamDSprites, self).__init__(latent_factor_indices,
+                                                   corr_indices, corr_type)
+

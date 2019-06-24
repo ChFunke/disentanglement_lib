@@ -1,0 +1,31 @@
+#!/bin/bash
+# Note: run this from the root of repo
+
+# all correlated datasets for all corr types and corr indices
+for dset_name in correlated_dsprites_full correlated_dsprites_noshape correlated_color_dsprites correlated_noisy_dsprites correlated_scream_dsprites
+do
+  for corr_type in plane ellipse line
+  do
+    for i in $(seq 0 5)
+    do
+      for j in $(seq 0 5)
+      do
+        python examples/sample_data.py --gin_file='examples/data.gin' \
+         --gin_param='dataset.name = "'$dset_name'"' \
+         --gin_param='dataset.corr_type = "'$corr_type'"' \
+         --gin_param='dataset.corr_indices = ['$i', '$j']'
+      done
+    done
+  done
+done
+
+
+# all uncorrelated datasets
+python examples/sample_data.py --gin_file='examples/data.gin'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "dsprites_noshape"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "color_dsprites"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "noisy_dsprites"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "scream_dsprites"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "smallnorb"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "cars3d"'
+python examples/sample_data.py --gin_file='examples/data.gin' --gin_param='dataset.name = "dummy_data"'

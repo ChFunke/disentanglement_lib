@@ -184,6 +184,19 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
       unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob,(kernel_width, kernel_width),0)
       unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
 
+    elif self.corr_type == 'power':  # based on Creager et al ICML 2019
+      first_factor = 1.
+      second_factor = 3.
+      # NOTE: The order of the indices now matters since they are each raised to
+      #       a different power in the unnormalized density.
+      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.float_)
+      Ni, Nj = corr_factor_sizes[0], corr_factor_sizes[1]
+      for i in range(Ni):
+        for j in range(Nj):
+          unnormalized_joint_prob[i, j] = \
+                  (float(i) / Ni) ** first_factor \
+                  + (float(j) / Nj) ** second_factor
+
     else:
       raise ValueError("Invalid corr type.")
 

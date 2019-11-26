@@ -60,8 +60,7 @@ class Shapes3D(ground_truth_data.GroundTruthData):
     self.factor_sizes = [10, 10, 10, 8, 4, 15]
     self.latent_factor_indices = list(range(6))
     self.num_total_factors = features.shape[1]
-    self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                    self.latent_factor_indices)
+    self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
     self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
         self.factor_sizes)
 

@@ -22,8 +22,10 @@ from disentanglement_lib.config.abstract_reasoning_study_v1.stage1 import sweep 
 from disentanglement_lib.config.fairness_study_v1 import sweep as fairness_study_v1
 from disentanglement_lib.config.tests import sweep as tests
 from disentanglement_lib.config.unsupervised_study_v1 import sweep as unsupervised_study_v1
+from disentanglement_lib.config.correlated_factors_study_v1 import sweep as correlated_factors_study_v1
 
 STUDIES = {
+    "correlated_factors_study_v1": correlated_factors_study_v1.CorrelatedFactorsStudyV1(),
     "unsupervised_study_v1": unsupervised_study_v1.UnsupervisedStudyV1(),
     "abstract_reasoning_study_v1":
         abstract_reasoning_study_v1.AbstractReasoningStudyV1(),

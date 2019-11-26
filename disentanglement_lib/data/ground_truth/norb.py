@@ -60,8 +60,7 @@ class SmallNORB(ground_truth_data.GroundTruthData):
     self.latent_factor_indices = [0, 2, 3, 4]
     self.num_total_factors = features.shape[1]
     self.index = util.StateSpaceAtomIndex(self.factor_sizes, features)
-    self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                    self.latent_factor_indices)
+    self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
 
   @property
   def num_factors(self):

@@ -68,6 +68,12 @@ def visualize(model_dir,
   gin_dict = results.gin_dict(gin_config_file)
   gin.bind_parameter("dataset.name", gin_dict["dataset.name"].replace(
       "'", ""))
+  gin.bind_parameter("correlation.active_correlation", bool(gin_dict["correlation.active_correlation"] == "True"))
+  if bool(gin_dict["correlation.active_correlation"] == "True"):
+    gin.bind_parameter("correlation_details.corr_indices",
+                       list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
+    gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace(
+      "'", ""))
 
   # Automatically infer the activation function from gin config.
   activation_str = gin_dict["reconstruction_loss.activation"]

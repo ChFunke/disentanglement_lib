@@ -24,13 +24,14 @@ import numpy as np
 import PIL
 from six.moves import range
 from tensorflow import gfile
+import gin.tf.external_configurables  # pylint: disable=unused-import
+import gin.tf
 
 DSPRITES_PATH = os.path.join(
     os.environ.get("DISENTANGLEMENT_LIB_DATA", "."), "dsprites",
     "dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz")
 SCREAM_PATH = os.path.join(
     os.environ.get("DISENTANGLEMENT_LIB_DATA", "."), "scream", "scream.jpg")
-
 
 
 class DSprites(ground_truth_data.GroundTruthData):
@@ -65,8 +66,9 @@ class DSprites(ground_truth_data.GroundTruthData):
     self.full_factor_sizes = [1, 3, 6, 40, 32, 32]
     self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
         self.factor_sizes)
-    self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                    self.latent_factor_indices)
+    self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
+
+
 
   @property
   def num_factors(self):

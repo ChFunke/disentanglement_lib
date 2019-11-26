@@ -52,8 +52,7 @@ class Cars3D(ground_truth_data.GroundTruthData):
     self.latent_factor_indices = [0, 1, 2]
     self.num_total_factors = features.shape[1]
     self.index = util.StateSpaceAtomIndex(self.factor_sizes, features)
-    self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                    self.latent_factor_indices)
+    self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
     self.data_shape = [64, 64, 3]
     self.images = self._load_data()
 

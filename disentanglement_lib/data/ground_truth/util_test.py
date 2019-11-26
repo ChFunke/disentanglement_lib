@@ -20,10 +20,14 @@ from __future__ import print_function
 # Dependency imports
 from absl.testing import parameterized
 from disentanglement_lib.data.ground_truth import dummy_data
+from disentanglement_lib.data.ground_truth import dsprites
 from disentanglement_lib.data.ground_truth import util
+from disentanglement_lib.utils import resources
 import numpy as np
 from six.moves import range
 import tensorflow as tf
+import gin.tf
+import matplotlib.pyplot as plt
 
 
 class UtilTest(parameterized.TestCase, tf.test.TestCase):
@@ -36,6 +40,42 @@ class UtilTest(parameterized.TestCase, tf.test.TestCase):
     with self.test_session() as sess:
       for _ in range(10):
         sess.run(next_element)
+
+
+class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
+
+  @parameterized.parameters([
+    (False, [4, 5], 'ellipse'),
+    (True, [4, 5], 'ellipse'),
+    (True, [4, 5], 'line'),
+    (True, [4, 5], 'plane'),
+  ])
+  def test_visualise_correlated_latent_factors(self, active_correlation, corr_indices, corr_type):
+    model_config = resources.get_file(
+        "config/tests/methods/unsupervised/correlation_test.gin")
+    gin.parse_config_files_and_bindings([model_config], [])
+    with gin.unlock_config():
+      gin.bind_parameter("correlation.active_correlation", active_correlation)
+      if active_correlation:
+        gin.bind_parameter("correlation_details.corr_indices", corr_indices)
+        gin.bind_parameter("correlation_details.corr_type", corr_type)
+    ground_truth_data = dsprites.DSprites(latent_factor_indices=[1, 2, 3, 4, 5])
+    random_state = np.random.RandomState(0)
+    latent_factors = ground_truth_data.sample_factors(500, random_state)
+    self.assertEqual(latent_factors.shape[1], 5)
+    latent_dimension_1 = latent_factors[:, 3]
+    latent_dimension_2 = latent_factors[:, 4]
+    plt.xlabel("latent_dimension_1")
+    plt.ylabel("latent_dimension_2")
+    if active_correlation:
+      plt.title(corr_type)
+    else:
+      plt.title('Uncorrelated')
+    plt.scatter(latent_dimension_1, latent_dimension_2)
+    plt.savefig('output/correlation_' + str(active_correlation) + '_' + corr_type + '.png')
+    plt.close()
+    gin.clear_config()
+
 
 
 class StateSpaceAtomIndexTest(parameterized.TestCase, tf.test.TestCase):

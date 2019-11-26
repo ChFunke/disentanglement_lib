@@ -97,8 +97,7 @@ class MPI3D(ground_truth_data.GroundTruthData):
     self.images = data["images"]
     self.latent_factor_indices = [0, 1, 2, 3, 4, 5, 6]
     self.num_total_factors = 7
-    self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                    self.latent_factor_indices)
+    self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
     self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
         self.factor_sizes)
 

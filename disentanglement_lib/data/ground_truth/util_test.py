@@ -49,6 +49,7 @@ class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
     (True, [4, 5], 'ellipse'),
     (True, [4, 5], 'line'),
     (True, [4, 5], 'plane'),
+    (True, [4, 5], 'power'),
   ])
   def test_visualise_correlated_latent_factors(self, active_correlation, corr_indices, corr_type):
     model_config = resources.get_file(

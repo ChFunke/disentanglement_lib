@@ -57,6 +57,7 @@ setup(
         'scipy>=1.0.0',
         'tensorflow_hub>=0.2',
         'tensorflow_probability==0.7',
+        'opencv-python==4.1.1.26'
     ],
     extras_require={
         'tf': ['tensorflow==1.14'],

@@ -53,6 +53,8 @@ flags.DEFINE_boolean("only_print", False,
                      "Whether to only print the hyperparameter settings.")
 flags.DEFINE_boolean("overwrite", False,
                      "Whether to overwrite output directory.")
+flags.DEFINE_boolean("only_train", False,
+                     "Whether to only train the model.")
 
 
 def main(unused_argv):
@@ -101,6 +103,9 @@ def main(unused_argv):
   else:
     logging.info("Skipped training...")
     model_dir = FLAGS.model_dir
+
+  if FLAGS.only_train:
+    return
 
   # We visualize reconstructions, samples and latent space traversals.
   visualize_dir = os.path.join(output_directory, "visualizations")

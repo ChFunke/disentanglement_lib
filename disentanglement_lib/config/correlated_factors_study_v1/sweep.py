@@ -31,13 +31,48 @@ from six.moves import range
 
 
 def get_datasets():
-  """Returns all the data sets."""
-  return h.sweep(
-      "dataset.name",
-      h.categorical([
-          "dsprites_full", "color_dsprites", "noisy_dsprites",
-          "scream_dsprites", "smallnorb", "cars3d", "shapes3d"
-      ]))
+  """Returns all the data sets with corresponding correlation indices."""
+  #DSprites_full
+  correlation_indices = h.fixed("correlation_details.corr_indices", [4, 5])
+  dataset_name = h.fixed("dataset.name", "dsprites_full")
+  config_dsprites_full = h.zipit([correlation_indices, dataset_name])
+
+  #Color_DSprites
+  correlation_indices = h.fixed("correlation_details.corr_indices", [4, 5])
+  dataset_name = h.fixed("dataset.name", "color_dsprites")
+  config_color_dsprites = h.zipit([correlation_indices, dataset_name])
+
+  #Noisy_DSprites
+  correlation_indices = h.fixed("correlation_details.corr_indices", [4, 5])
+  dataset_name = h.fixed("dataset.name", "noisy_dsprites")
+  config_noisy_dsprites = h.zipit([correlation_indices, dataset_name])
+
+  #Scream_DSprites
+  correlation_indices = h.fixed("correlation_details.corr_indices", [4, 5])
+  dataset_name = h.fixed("dataset.name", "scream_dsprites")
+  config_scream_dsprites = h.zipit([correlation_indices, dataset_name])
+
+  #smallnorb
+  correlation_indices = h.fixed("correlation_details.corr_indices", [3, 4])
+  dataset_name = h.fixed("dataset.name", "smallnorb")
+  config_smallnorb = h.zipit([correlation_indices, dataset_name])
+
+  #cars3d
+  correlation_indices = h.fixed("correlation_details.corr_indices", [1, 2])
+  dataset_name = h.fixed("dataset.name", "cars3d")
+  config_cars3d = h.zipit([correlation_indices, dataset_name])
+
+  #shapes3d
+  correlation_indices = h.fixed("correlation_details.corr_indices", [1, 2])
+  dataset_name = h.fixed("dataset.name", "shapes3d")
+  config_shapes3d = h.zipit([correlation_indices, dataset_name])
+
+  all_datasets = h.chainit([
+      config_dsprites_full, config_color_dsprites, config_noisy_dsprites, config_scream_dsprites,
+      config_smallnorb, config_cars3d, config_shapes3d
+  ])
+
+  return all_datasets
 
 
 def get_num_latent(sweep):
@@ -106,13 +141,22 @@ def get_default_models():
   ])
   return all_models
 
+def get_correlation_types():
+    """Returns all types of correlation"""
+    return h.sweep(
+        "correlation_details.corr_type",
+        h.categorical([
+            "ellipse", "power", "line", "plane"
+        ]))
 
 def get_config():
   """Returns the hyperparameter configs for different experiments."""
   arch_enc = h.fixed("encoder.encoder_fn", "@conv_encoder", length=1)
   arch_dec = h.fixed("decoder.decoder_fn", "@deconv_decoder", length=1)
-  architecture = h.zipit([arch_enc, arch_dec])
+  corr_act = h.fixed("correlation.active_correlation", True)
+  architecture = h.zipit([arch_enc, arch_dec, corr_act])
   return h.product([
+      get_correlation_types(),
       get_datasets(),
       architecture,
       get_default_models(),

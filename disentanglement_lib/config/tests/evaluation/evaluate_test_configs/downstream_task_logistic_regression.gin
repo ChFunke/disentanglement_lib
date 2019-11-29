@@ -19,3 +19,4 @@ evaluation.random_seed = 0
 downstream_task.num_train=[100]
 downstream_task.num_test=100
 predictor.predictor_fn = @logistic_regression_cv
+correlation.active_correlation = False

@@ -21,3 +21,4 @@ reduced_downstream_task.num_test=100
 reduced_downstream_task.num_factors_to_remove=1
 reduced_representation.correlation_measure=@factorwise_dci
 predictor.predictor_fn = @gradient_boosting_classifier
+correlation.active_correlation = False

@@ -18,3 +18,4 @@ dataset.name="dummy_data"
 evaluation.random_seed = 0
 dci.num_train=100
 dci.num_test=100
+correlation.active_correlation = False

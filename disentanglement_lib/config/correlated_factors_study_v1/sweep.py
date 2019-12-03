@@ -53,7 +53,7 @@ def get_datasets():
   config_scream_dsprites = h.zipit([correlation_indices, dataset_name])
 
   #smallnorb
-  correlation_indices = h.fixed("correlation_details.corr_indices", [3, 4])
+  correlation_indices = h.fixed("correlation_details.corr_indices", [1, 3])
   dataset_name = h.fixed("dataset.name", "smallnorb")
   config_smallnorb = h.zipit([correlation_indices, dataset_name])
 

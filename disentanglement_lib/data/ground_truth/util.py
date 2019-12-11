@@ -84,7 +84,7 @@ class SplitDiscreteStateSpace(object):
         return random_state.randint(self.factor_sizes[i], size=num)
 
 
-@gin.configurable("correlation_details", blacklist=["factor_sizes", "latent_factor_indices"])
+
 class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
     """State space with two correlated latent factors.
   Pick two latent factor indices to be correlated
@@ -96,6 +96,7 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
     ValueError: if an invalid corr type or corr indices are provided.
   """
 
+    @gin.configurable("correlation_details", blacklist=["factor_sizes", "latent_factor_indices"])
     def __init__(self, factor_sizes, latent_factor_indices, corr_indices=gin.REQUIRED,
                  corr_type=gin.REQUIRED):
         if corr_indices is None:
@@ -120,17 +121,20 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
         self.corr_type = corr_type
         self.joint_prob = self._get_joint_prob()
 
-    def _get_joint_prob(self):
-        corr_factor_sizes = self.factor_sizes[self.corr_indices]
+    @gin.configurable("correlation_hyperparameter")
+    def _get_joint_prob(self, bias_plane=None):
+        corr_factor_sizes = [self.factor_sizes[self.corr_indices[0]], self.factor_sizes[self.corr_indices[1]]]
 
         if self.corr_type == 'plane':  # equivalent to Chen et al 2018 type B
-            bias = 0.5  # sets diff between min and max prob
-            unnormalized_marg_prob_0 = np.linspace(0., 1., corr_factor_sizes[0])
-            unnormalized_marg_prob_0 += bias
-            unnormalized_marg_prob_1 = np.linspace(0., 1., corr_factor_sizes[1])
-            unnormalized_marg_prob_1 += bias
-            unnormalized_joint_prob = np.outer(
-                unnormalized_marg_prob_0, unnormalized_marg_prob_1
+            if bias_plane is None:
+                raise ValueError("Invalid corr type.")
+            else:
+                unnormalized_marg_prob_0 = np.linspace(0., 1., corr_factor_sizes[0])
+                unnormalized_marg_prob_0 += bias_plane
+                unnormalized_marg_prob_1 = np.linspace(0., 1., corr_factor_sizes[1])
+                unnormalized_marg_prob_1 += bias_plane
+                unnormalized_joint_prob = np.outer(
+                    unnormalized_marg_prob_0, unnormalized_marg_prob_1
             )
 
         elif self.corr_type == 'ellipse':  # equivalent to Chen et al 2018 type C
@@ -216,8 +220,8 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
         return joint_prob
 
     def _sample_correlated_factors(self, num, random_state):
-
-        corr_factor_sizes = self.factor_sizes[self.corr_indices]
+        corr_factor_sizes = [self.factor_sizes[self.corr_indices[0]], self.factor_sizes[self.corr_indices[1]]]
+        # corr_factor_sizes = self.factor_sizes[self.corr_indices]
         n_x, n_y = corr_factor_sizes
         pairs = np.indices(dimensions=(n_x, n_y))
         pairs = pairs.reshape(2, -1).T

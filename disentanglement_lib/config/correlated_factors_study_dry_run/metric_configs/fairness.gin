@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-evaluation.evaluation_fn = @factor_vae_score
+evaluation.evaluation_fn = @fairness
 dataset.name="auto"
 correlation.active_correlation = "auto"
 evaluation.random_seed = 0
-factor_vae_score.num_variance_estimate=10000
-factor_vae_score.num_train=10000
-factor_vae_score.num_eval=5000
-factor_vae_score.batch_size=64
-prune_dims.threshold = 0.05
-
+fairness.num_train=10000
+fairness.num_test_points_per_class=100
+predictor.predictor_fn = @gradient_boosting_classifier

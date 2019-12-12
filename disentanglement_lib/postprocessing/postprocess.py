@@ -111,6 +111,9 @@ def postprocess(model_dir,
       if gin.query_parameter("correlation.active_correlation"):
         gin.bind_parameter("correlation_details.corr_indices", list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
         gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace("'", ""))
+        gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                           float(gin_dict["correlation_hyperparameter.bias_plane"].replace(
+                             "'", "")))
   dataset = named_data.get_named_ground_truth_data()
 
   # Path to TFHub module of previously trained model.

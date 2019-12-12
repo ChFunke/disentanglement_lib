@@ -16,6 +16,4 @@
 postprocess.postprocess_fn = @mean_representation
 dataset.name="auto"
 correlation.active_correlation = "auto"
-correlation_details.corr_indices = "auto"
-correlation_details.corr_type = "auto"
 postprocess.random_seed = 0

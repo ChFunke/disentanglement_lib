@@ -107,7 +107,7 @@ def explicitness_per_factor(mus_train, y_train, mus_test, y_test):
   mlb = MultiLabelBinarizer()
   roc_train = roc_auc_score(mlb.fit_transform(np.expand_dims(y_train, 1)),
                             y_pred_train)
-  roc_test = roc_auc_score(mlb.fit_transform(np.expand_dims(y_test, 1)),
+  roc_test = roc_auc_score(mlb.transform(np.expand_dims(y_test, 1)),
                            y_pred_test)
   return roc_train, roc_test
 

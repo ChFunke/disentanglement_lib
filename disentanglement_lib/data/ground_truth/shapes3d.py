@@ -22,13 +22,12 @@ from disentanglement_lib.data.ground_truth import ground_truth_data
 from disentanglement_lib.data.ground_truth import util
 import numpy as np
 from six.moves import range
-import tensorflow as tf
+import h5py
 
 
 SHAPES3D_PATH = os.path.join(
     os.environ.get("DISENTANGLEMENT_LIB_DATA", "."), "3dshapes",
-    "look-at-object-room_floor-hueXwall-hueXobj-"
-    "hueXobj-sizeXobj-shapeXview-azi.npz"
+    "3dshapes.h5"
 )
 
 
@@ -48,12 +47,10 @@ class Shapes3D(ground_truth_data.GroundTruthData):
   """
 
   def __init__(self):
-    with tf.gfile.GFile(SHAPES3D_PATH, "rb") as f:
-      # Data was saved originally using python2, so we need to set the encoding.
-      data = np.load(f, encoding="latin1")
-    images = data["images"]
-    labels = data["labels"]
-    n_samples = np.prod(images.shape[0:6])
+    with h5py.File(SHAPES3D_PATH, "r") as dataset:
+      images = dataset['images'][()]
+      labels = dataset['labels'][()]
+    n_samples = images.shape[0]
     self.images = (
         images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)
     features = labels.reshape([n_samples, 6])

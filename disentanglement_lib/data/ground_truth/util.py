@@ -22,6 +22,7 @@ from six.moves import range
 import tensorflow as tf
 import gin.tf.external_configurables  # pylint: disable=unused-import
 import gin.tf
+import math
 
 
 @gin.configurable("correlation", blacklist=["factor_sizes", "latent_factor_indices"])
@@ -122,7 +123,7 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
         self.joint_prob = self._get_joint_prob()
 
     @gin.configurable("correlation_hyperparameter")
-    def _get_joint_prob(self, bias_plane=None):
+    def _get_joint_prob(self, bias_plane=None, line_width=None):
         corr_factor_sizes = [self.factor_sizes[self.corr_indices[0]], self.factor_sizes[self.corr_indices[1]]]
 
         if self.corr_type == 'plane':  # equivalent to Chen et al 2018 type B
@@ -183,9 +184,11 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
             # Create a black image
             unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
 
-            width = 2  # this will get smoothed out later
+            # width = 2  this will get smoothed out later
+            width = math.ceil(line_width * min(corr_factor_sizes))
 
-            offset = corr_factor_sizes[0] // 6
+            # offset = corr_factor_sizes[0] // 6
+            offset = 0
             start = (0, offset)
             end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
 

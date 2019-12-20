@@ -50,18 +50,22 @@ class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
         ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.1),
         ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.2),
         ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.3),
+        ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.5),
         ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 1000.0),
         ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.1),
         ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.2),
         ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.3),
+        ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.5),
         ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 1000.0),
         ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.1),
         ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.2),
         ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.3),
+        ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.5),
         ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 1000.0),
         ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.1),
         ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.2),
         ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.3),
+        ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.5),
         ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 1000.0),
     ])
     def test_visualise_correlated_latent_factors(self, dataset_name, active_correlation, corr_indices, y_label, x_label,
@@ -85,8 +89,8 @@ class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
 
         ground_truth_data = named_data.get_named_ground_truth_data()
         prob_distribution = ground_truth_data.state_space.joint_prob
-        plt.imshow(prob_distribution, aspect=1.0)
-        plt.axes().set_aspect(0.5)
+        plt.rcParams["figure.figsize"] = (10, 10)
+        plt.imshow(prob_distribution, aspect='auto')
         plt.colorbar()
         plt.xlabel(x_label)
         plt.ylabel(y_label)

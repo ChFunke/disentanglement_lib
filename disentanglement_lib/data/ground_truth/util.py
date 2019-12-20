@@ -185,21 +185,25 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
             unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
 
             # width = 2  this will get smoothed out later
-            width = math.ceil(line_width * min(corr_factor_sizes))
+            if line_width >= 1.0: # choose uniform (independent) distribution if line_width >= 1
+                unnormalized_joint_prob = np.ones(corr_factor_sizes)
+            else:
 
-            # offset = corr_factor_sizes[0] // 6
-            offset = 0
-            start = (0, offset)
-            end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
+                width = math.ceil(line_width * min(corr_factor_sizes))
 
-            cv2.line(unnormalized_joint_prob, start, end, 255, width)
+                # offset = corr_factor_sizes[0] // 6
+                offset = 0
+                start = (0, offset)
+                end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
 
-            kernel_width = min(corr_factor_sizes) // 5
-            if not kernel_width % 2:  # kernels widths must be odd
-                kernel_width += 1
+                cv2.line(unnormalized_joint_prob, start, end, 255, width)
 
-            unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob, (kernel_width, kernel_width), 0)
-            unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
+                kernel_width = min(corr_factor_sizes) // 4
+                if not kernel_width % 2:  # kernels widths must be odd
+                    kernel_width += 1
+
+                unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob, (kernel_width, kernel_width), 0)
+                unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
 
         elif self.corr_type == 'power':  # based on Creager et al ICML 2019
             first_factor = 1.

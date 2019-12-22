@@ -122,7 +122,13 @@ def evaluate(model_dir,
       if gin.query_parameter("correlation.active_correlation"):
         gin.bind_parameter("correlation_details.corr_indices", list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
         gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace("'", ""))
-        gin.bind_parameter("correlation_hyperparameter.bias_plane", float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+        if gin.query_parameter("correlation_details.corr_type") == "plane":
+          gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                             float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+        elif gin.query_parameter("correlation_details.corr_type") == "line":
+          gin.bind_parameter("correlation_hyperparameter.line_width",
+                             float(gin_dict["correlation_hyperparameter.line_width"].replace("'", "")))
+
   dataset = named_data.get_named_ground_truth_data()
 
   # Path to TFHub module of previously trained representation.

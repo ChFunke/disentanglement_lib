@@ -74,8 +74,12 @@ def visualize(model_dir,
                        list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
     gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace(
       "'", ""))
-    gin.bind_parameter("correlation_hyperparameter.bias_plane", float(gin_dict["correlation_hyperparameter.bias_plane"].replace(
-      "'", "")))
+    if gin.query_parameter("correlation_details.corr_type") == "plane":
+      gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                         float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+    elif gin.query_parameter("correlation_details.corr_type") == "line":
+      gin.bind_parameter("correlation_hyperparameter.line_width",
+                         float(gin_dict["correlation_hyperparameter.line_width"].replace("'", "")))
 
   # Automatically infer the activation function from gin config.
   activation_str = gin_dict["reconstruction_loss.activation"]

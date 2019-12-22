@@ -148,9 +148,9 @@ def get_config():
     corr_act = h.fixed("correlation.active_correlation", True)
     architecture = h.zipit([arch_enc, arch_dec, corr_act])
     return h.product([
+        get_datasets(),
         get_plane_biases(),
         get_correlation_types(),
-        get_datasets(),
         architecture,
         get_default_models(),
         get_seeds(5),

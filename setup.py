@@ -39,8 +39,9 @@ setup(
         'bin/dlib_train',
         'bin/dlib_visualize_dataset',
         'bin/dlib_visualize_model',
+        'bin/dlib_visualize_entanglement',
         'bin/dlib_tests',
-        'bin/dlib_download_data',
+        'bin/dlib_download_data'
     ],
     install_requires=[
         'future',
@@ -58,7 +59,8 @@ setup(
         'tensorflow_hub>=0.2',
         'tensorflow_probability==0.7',
         'opencv-python==4.1.1.26',
-        'h5py'
+        'h5py',
+        'seaborn'
     ],
     extras_require={
         'tf': ['tensorflow==1.14'],

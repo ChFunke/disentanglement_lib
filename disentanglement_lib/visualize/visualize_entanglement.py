@@ -210,16 +210,19 @@ def get_distance_matrix(threshold_line, independent_group_constituents, num_fact
                             clusters_to_be_merged.append(igc_cluster_prev)
                     if len(clusters_to_be_merged) == 1:
                         factor_list = [fac for fac in igc_cluster if fac not in clusters_to_be_merged[0]]
-                        if len(factor_list) == 1:
-                            factor = factor_list[0]
+                        for factor in factor_list:
                             for other_factor in clusters_to_be_merged[0]:
                                 min_factor = min(factor, other_factor)
                                 max_factor = max(factor, other_factor)
                                 index = pair_list.index((min_factor, max_factor))
                                 # distance_matrix[index] = max_threshold - threshold
                                 distance_matrix[index] = threshold_index
-                        else:
-                            raise ValueError('Two or more new factors appeared suddenly in cluster')
+                            for other_factor in [fac for fac in factor_list if fac != factor]:
+                                min_factor = min(factor, other_factor)
+                                max_factor = max(factor, other_factor)
+                                index = pair_list.index((min_factor, max_factor))
+                                # distance_matrix[index] = max_threshold - threshold
+                                distance_matrix[index] = threshold_index
                     if len(clusters_to_be_merged) == 2:
                         for factor in clusters_to_be_merged[0]:
                             for other_factor in clusters_to_be_merged[1]:

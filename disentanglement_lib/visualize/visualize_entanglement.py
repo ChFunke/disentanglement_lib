@@ -232,7 +232,16 @@ def get_distance_matrix(threshold_line, independent_group_constituents, num_fact
                                 # distance_matrix[index] = max_threshold - threshold
                                 distance_matrix[index] = threshold_index
                     elif len(clusters_to_be_merged) > 2:
-                        raise ValueError('more than two groups merged at the same threshold value')
+                        for cluster in clusters_to_be_merged:
+                            other_clusters = [other_cluster_temp for other_cluster_temp in clusters_to_be_merged if other_cluster_temp != cluster]
+                            for other_cluster in other_clusters:
+                                for factor in cluster:
+                                    for other_factor in other_cluster:
+                                        min_factor = min(factor, other_factor)
+                                        max_factor = max(factor, other_factor)
+                                        index = pair_list.index((min_factor, max_factor))
+                                        # distance_matrix[index] = max_threshold - threshold
+                                        distance_matrix[index] = threshold_index
 
     return distance_matrix, discovered_factors_dict
 

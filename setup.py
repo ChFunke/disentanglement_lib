@@ -39,6 +39,7 @@ setup(
         'bin/dlib_train',
         'bin/dlib_visualize_dataset',
         'bin/dlib_visualize_model',
+        'bin/dlib_visualize_model_generalisation',
         'bin/dlib_visualize_entanglement',
         'bin/dlib_tests',
         'bin/dlib_download_data'

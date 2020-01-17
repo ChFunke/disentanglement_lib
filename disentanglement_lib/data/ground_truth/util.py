@@ -84,6 +84,9 @@ class SplitDiscreteStateSpace(object):
     def _sample_factor(self, i, num, random_state):
         return random_state.randint(self.factor_sizes[i], size=num)
 
+    def get_correlated_factors(self):
+        return []
+
 
 
 class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
@@ -256,6 +259,11 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
                 factors[:, pos] = self._sample_factor(i, num, random_state)
 
         return factors
+
+    def get_correlated_factors(self):
+        # this is a workaround to the problem that dsprites_full neglects color variable
+        shift = len(self.factor_sizes) - len(self.latent_factor_indices)
+        return [self.corr_indices[0] - shift, self.corr_indices[1] - shift]
 
 
 class StateSpaceAtomIndex(object):

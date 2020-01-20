@@ -61,7 +61,7 @@ setup(
         'tensorflow_probability==0.7',
         'opencv-python==4.1.1.26',
         'h5py',
-        'seaborn'
+        'seaborn',
     ],
     extras_require={
         'tf': ['tensorflow==1.14'],

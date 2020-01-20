@@ -130,7 +130,7 @@ def compute_entanglement_metrics_afa(ground_truth_data, representation_function,
         scores[size_string + ":mi_discovered_factors_dict"] = {int(k): v for k, v in mi_discovered_factors_dict.items()}
         scores[size_string + ":mi_threshold_matrix"] = list(mi_threshold_matrix)
 
-    scores['evaluation.name'] = "entanglement_task_afa"
+    scores['evaluation.name'] = "entanglement_metrics_afa"
     return scores
 
 

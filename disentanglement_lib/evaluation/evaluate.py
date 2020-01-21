@@ -25,9 +25,11 @@ from disentanglement_lib.data.ground_truth import named_data
 from disentanglement_lib.evaluation.metrics import beta_vae  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import dci_corr_submetric_afa  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci_afa_extended_representation  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import robust_dci_afa  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa_mi  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import fairness_afa  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import fairness_afa_partial  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci_afa_partial  # pylint: disable=unused-import

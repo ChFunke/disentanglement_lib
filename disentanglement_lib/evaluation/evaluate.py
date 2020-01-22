@@ -31,6 +31,7 @@ from disentanglement_lib.evaluation.metrics import robust_dci_afa  # pylint: dis
 from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa_mi  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import fairness_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import fairness_afa_score  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import fairness_afa_partial  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci_afa_partial  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import downstream_task  # pylint: disable=unused-import

@@ -54,7 +54,7 @@ class MPI3D(ground_truth_data.GroundTruthData):
   6 - Second DOF (40 different values)
   """
 
-  def __init__(self, mode="mpi3d_toy"):
+  def __init__(self, mode="mpi3d_toy", latent_factor_indices=None):
     if mode == "mpi3d_toy":
       mpi3d_path = os.path.join(
           os.environ.get("DISENTANGLEMENT_LIB_DATA", "."), "mpi3d_toy",
@@ -95,8 +95,13 @@ class MPI3D(ground_truth_data.GroundTruthData):
       raise ValueError("Unknown mode provided.")
 
     self.images = data["images"]
-    self.latent_factor_indices = [0, 1, 2, 3, 4, 5, 6]
-    self.num_total_factors = 7
+    if latent_factor_indices is None:
+        latent_factor_indices = [0, 1, 2, 3, 4, 5, 6]
+
+    num_total_factors = len(latent_factor_indices)
+    self.latent_factor_indices = latent_factor_indices
+    self.num_total_factors = num_total_factors
+
     self.state_space = util.get_state_space(self.factor_sizes, self.latent_factor_indices)
     self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
         self.factor_sizes)

@@ -48,6 +48,12 @@ def get_datasets():
     dataset_name = h.fixed("dataset.name", "mpi3d_real")
     config_mpi3d_real = h.zipit([correlation_indices, dataset_name])
 
+    # mpi3d_real_reduced
+    correlation_indices = h.fixed("correlation_details.corr_indices", [5, 6])
+    dataset_name = h.fixed("dataset.name", "mpi3d_real_reduced")
+    config_mpi3d_real = h.zipit([correlation_indices, dataset_name])
+
+
     # cars3d
     correlation_indices = h.fixed("correlation_details.corr_indices", [1, 2])
     dataset_name = h.fixed("dataset.name", "cars3d")

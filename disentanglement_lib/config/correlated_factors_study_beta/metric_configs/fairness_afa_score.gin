@@ -20,5 +20,5 @@ evaluation.random_seed = 0
 fairness_afa_score.num_train=10000
 fairness_afa_score.num_test_points_per_class=100
 fairness_afa_score.random_seed_fast_adaptation_step=999
-fairness_afa_score.num_labels_available=[0,10,50,100]
+fairness_afa_score.num_labels_available=[0,10,50,100,1000,10000]
 predictor.predictor_fn = @gradient_boosting_classifier

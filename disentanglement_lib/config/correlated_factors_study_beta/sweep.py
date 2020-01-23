@@ -41,12 +41,17 @@ def get_datasets():
     # shapes3d
     correlation_indices = h.fixed("correlation_details.corr_indices", [3, 5])
     dataset_name = h.fixed("dataset.name", "shapes3d")
-    config_shapes3d = h.zipit([correlation_indices, dataset_name])
+    config_shapes3d_size_azimuth = h.zipit([correlation_indices, dataset_name])
 
     # mpi3d_real
     correlation_indices = h.fixed("correlation_details.corr_indices", [5, 6])
     dataset_name = h.fixed("dataset.name", "mpi3d_real")
     config_mpi3d_real = h.zipit([correlation_indices, dataset_name])
+
+    # shapes3d
+    correlation_indices = h.fixed("correlation_details.corr_indices", [2, 5])
+    dataset_name = h.fixed("dataset.name", "shapes3d")
+    config_shapes3d_objcolor_azimuth = h.zipit([correlation_indices, dataset_name])
 
     # mpi3d_real_reduced
     correlation_indices = h.fixed("correlation_details.corr_indices", [5, 6])
@@ -60,7 +65,7 @@ def get_datasets():
     config_cars3d = h.zipit([correlation_indices, dataset_name])
 
     all_datasets = h.chainit([
-        config_dsprites, config_shapes3d, config_mpi3d_real, config_cars3d
+        config_dsprites, config_shapes3d_size_azimuth, config_mpi3d_real, config_shapes3d_objcolor_azimuth
     ])
 
     return all_datasets

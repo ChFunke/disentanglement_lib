@@ -47,18 +47,9 @@ class UtilTest(parameterized.TestCase, tf.test.TestCase):
 class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
 
     @parameterized.parameters([
-        ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.4),
-        ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.6),
-        ('dsprites_full', True, [3, 4], 'orientation', 'position x', 'line', 0.7),
-        ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.4),
-        ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.6),
-        ('shapes3d', True, [5, 3], 'azimuth', 'object size', 'line', 0.7),
-        ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.4),
-        ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.6),
-        ('mpi3d_real', True, [5, 6], 'first DOF', 'second DOF', 'line', 0.7),
-        ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.4),
-        ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.6),
-        ('cars3d', True, [1, 2], 'azimuth', 'object size', 'line', 0.7),
+        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.2),
+        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.4),
+        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.7),
     ])
     def test_visualise_correlated_latent_factors(self, dataset_name, active_correlation, corr_indices, y_label, x_label,
                                                  corr_type, width):

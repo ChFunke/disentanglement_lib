@@ -197,7 +197,7 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
                 # offset = corr_factor_sizes[0] // 6
                 offset = 0
                 start = (0, offset)
-                end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
+                end = (corr_factor_sizes[1], corr_factor_sizes[0])
 
                 cv2.line(unnormalized_joint_prob, start, end, 255, width)
 

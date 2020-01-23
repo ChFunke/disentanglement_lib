@@ -34,7 +34,6 @@ from six.moves import range
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from disentanglement_lib.visualize import visualize_util, visualize_entanglement
 
 import gin.tf
 
@@ -266,9 +265,7 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
             model.fit(x_train.T, y_train[corr_factors[i], :])
             importance_matrix[:, i] = np.abs(model.feature_importances_)
 
-        # Select dimensions based on mid-range value (max_val + min_val)/2
-        # dimension_threshold = (np.amax(importance_matrix) + np.amin(importance_matrix)) / 2
-        # entangled_code_dimensions = [dimension for dimension in range(num_codes) if np.any(importance_matrix[dimension, :] > dimension_threshold)]
+        # Select dimensions
         max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
         entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
 

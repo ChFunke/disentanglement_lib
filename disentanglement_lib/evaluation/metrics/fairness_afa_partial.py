@@ -253,7 +253,7 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
             importance_matrix[:, i] = np.abs(model.feature_importances_)
 
         # Select dimensions
-        max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
+        max_codes = np.sum(importance_matrix, axis=1)
         entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
 
         # Disentangle the features by doing linear regression using the observations (train data)

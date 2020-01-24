@@ -198,14 +198,24 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
                 offset = 0
                 start = (0, offset)
                 end = (corr_factor_sizes[1], corr_factor_sizes[0])
-
-                cv2.line(unnormalized_joint_prob, start, end, 255, width)
+                # this is a speciality when correlating object type and azimuth in shaes 3d
 
                 kernel_width = min(corr_factor_sizes) // 4
                 if not kernel_width % 2:  # kernels widths must be odd
                     kernel_width += 1
 
-                unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob, (kernel_width, kernel_width), 0)
+                kernel_width_x = kernel_width
+                kernel_width_y = kernel_width
+
+                if corr_factor_sizes[1] == 4:
+                    end = (corr_factor_sizes[1], corr_factor_sizes[0] + 5)
+                    kernel_width_x = 1
+                    kernel_width_y = kernel_width + 4
+
+
+                cv2.line(unnormalized_joint_prob, start, end, 255, width)
+
+                unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob, (kernel_width_x, kernel_width_y), 0)
                 unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
 
         elif self.corr_type == 'power':  # based on Creager et al ICML 2019

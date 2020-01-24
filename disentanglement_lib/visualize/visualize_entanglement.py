@@ -32,6 +32,10 @@ import disentanglement_lib.evaluation.metrics.dci as dci
 import disentanglement_lib.evaluation.metrics.sap_score as sap
 import disentanglement_lib.evaluation.metrics.utils as utils
 
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+
 
 def visualize(model_dir,
               output_dir,
@@ -54,7 +58,7 @@ def visualize(model_dir,
 
     module_paths = [os.path.join(model_dir, "postprocessed", "mean", "tfhub"),
                     os.path.join(model_dir, "postprocessed", "sampled", "tfhub")]
-    modes = ['mean', 'sampled']
+    modes = ['mean']
 
     results_dir = os.path.join(output_dir, "entanglement_properties")
 
@@ -98,62 +102,136 @@ def visualize(model_dir,
 
                 ground_truth_data = named_data.get_named_ground_truth_data()
 
-                num_train = 10000
-                num_test = 5000
-                batch_size = 16
-                mus_train, ys_train = utils.generate_batch_factor_code(
-                    ground_truth_data, _representation_function, num_train,
-                    random_state, batch_size)
-                mus_test, ys_test = utils.generate_batch_factor_code(
-                    ground_truth_data, _representation_function, num_test,
-                    random_state, batch_size)
+                num_labels_available = [0,10,50,100,1000,10000]
 
-                discretized_mus = histogram_discretize(mus_train, num_bins)
+                for num_labels in num_labels_available:
+                    size_string = str(num_labels)
 
-                results_dict = {}
+                    random_state_for_few_labels = np.random.RandomState(999)
+                    adjusted_representation_function, scores_fit = get_fast_adapted_representation_function(
+                        ground_truth_data,
+                        _representation_function,
+                        random_state_for_few_labels,
+                        num_labels)
 
-                gbt_matrix, train_err_gbt, test_err_gbt = dci.compute_importance_gbt(mus_train, ys_train, mus_test, ys_test)
-                sap_matrix = sap.compute_score_matrix(mus_train, ys_train, mus_test, ys_test, False)
-                mi_matrix = utils.discrete_mutual_info(discretized_mus, ys_train)
+                    num_train = 10000
+                    num_test = 5000
+                    batch_size = 16
+                    mus_train, ys_train = utils.generate_batch_factor_code(
+                        ground_truth_data, adjusted_representation_function, num_train,
+                        random_state, batch_size)
+                    mus_test, ys_test = utils.generate_batch_factor_code(
+                        ground_truth_data, adjusted_representation_function, num_test,
+                        random_state, batch_size)
 
-                visualize_util.fov_latent_code_plot(gbt_matrix, os.path.join(results_dir, "gbt_matrix_" + mode + ".jpg"),
-                                                    dataset)
-                visualize_util.fov_latent_code_plot(sap_matrix, os.path.join(results_dir, "sap_matrix_" + mode + ".jpg"),
-                                                    dataset)
-                visualize_util.fov_latent_code_plot(mi_matrix, os.path.join(results_dir, "mi_matrix_" + mode + ".jpg"),
-                                                    dataset)
+                    discretized_mus = histogram_discretize(mus_train, num_bins)
 
-                threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(gbt_matrix)
-                visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, "gbt_matrix_curve_" + mode + identifier + ".jpg"))
-                visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, "gbt_dendrogram_" + mode + identifier + ".jpg"))
-                distance_threshold_gbt = get_thresholded_matrix(distance_matrix, threshold_line)
-                results_dict['distance_threshold_gbt'] = distance_threshold_gbt
-                results_dict['distance_matrix_gbt'] = list(distance_matrix)
-                results_dict['thresholds_gbt'] = list(threshold_line)
+                    results_dict = {}
 
-                threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(sap_matrix)
-                visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, "sap_matrix_curve_" + mode + identifier + ".jpg"))
-                visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, "sap_dendrogram_" + mode + identifier + ".jpg"))
-                distance_threshold_sap = get_thresholded_matrix(distance_matrix, threshold_line)
-                results_dict['distance_threshold_sap'] = distance_threshold_sap
-                results_dict['distance_matrix_sap'] = list(distance_matrix)
-                results_dict['thresholds_sap'] = list(threshold_line)
+                    gbt_matrix, train_err_gbt, test_err_gbt = dci.compute_importance_gbt(mus_train, ys_train, mus_test, ys_test)
+                    # sap_matrix = sap.compute_score_matrix(mus_train, ys_train, mus_test, ys_test, False)
+                    mi_matrix = utils.discrete_mutual_info(discretized_mus, ys_train)
 
-                threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(mi_matrix)
-                visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, "mi_matrix_curve_" + mode + identifier + ".jpg"))
-                visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, "mi_dendrogram_" + mode + identifier + ".jpg"))
-                distance_threshold_mig = get_thresholded_matrix(distance_matrix, threshold_line)
-                results_dict['distance_threshold_mig'] = distance_threshold_mig
-                results_dict['distance_matrix_mig'] = list(distance_matrix)
-                results_dict['thresholds_mig'] = list(threshold_line)
+                    visualize_util.fov_latent_code_plot(gbt_matrix, os.path.join(results_dir, size_string + ":gbt_matrix_" + mode + ".jpg"),
+                                                        dataset)
+                    # visualize_util.fov_latent_code_plot(sap_matrix, os.path.join(results_dir, size_string + ":sap_matrix_" + mode + ".jpg"), dataset)
+                    visualize_util.fov_latent_code_plot(mi_matrix, os.path.join(results_dir, size_string + ":mi_matrix_" + mode + ".jpg"),
+                                                        dataset)
 
-                results_dict['evaluation_on_biased_dataset'] = correlation_mode
-                results_dict['evaluation.name'] = "entanglement_task" + identifier
+                    results_dict[size_string + ':mean_squared_error'] = scores_fit['mean_squared_error']
+                    results_dict[size_string + ':r2_score'] = scores_fit['r2_score']
+                    results_dict[size_string + ':mean_absolute_error'] = scores_fit['mean_absolute_error']
 
-                # Save the results (and all previous results in the pipeline) on disk.
-                original_results_dir = os.path.join(model_dir, "postprocessed", mode, "results")
-                results_dir_aggregate = os.path.join(model_dir, "metrics", mode, "entanglement_task" + identifier, "results")
-                results.update_result_directory(results_dir_aggregate, "evaluation", results_dict, original_results_dir)
+                    threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(gbt_matrix)
+                    visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, size_string + ":gbt_matrix_curve_" + mode + identifier + ".jpg"))
+                    visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, size_string + ":gbt_dendrogram_" + mode + identifier + ".jpg"))
+                    distance_threshold_gbt = get_thresholded_matrix(distance_matrix, threshold_line)
+                    results_dict['distance_threshold_gbt'] = distance_threshold_gbt
+                    results_dict['distance_matrix_gbt'] = list(distance_matrix)
+                    results_dict['thresholds_gbt'] = list(threshold_line)
+                    '''
+                    threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(sap_matrix)
+                    visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, size_string + ":sap_matrix_curve_" + mode + identifier + ".jpg"))
+                    visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, size_string + ":sap_dendrogram_" + mode + identifier + ".jpg"))
+                    distance_threshold_sap = get_thresholded_matrix(distance_matrix, threshold_line)
+                    results_dict['distance_threshold_sap'] = distance_threshold_sap
+                    results_dict['distance_matrix_sap'] = list(distance_matrix)
+                    results_dict['thresholds_sap'] = list(threshold_line)'''
+
+                    threshold_line, independent_groups, discovered_factors, distance_matrix, discovered_factors_dict = get_entanglement_curves(mi_matrix)
+                    visualize_util.entanglement_curves_plot(threshold_line, independent_groups, discovered_factors, os.path.join(results_dir, size_string + ":mi_matrix_curve_" + mode + identifier + ".jpg"))
+                    visualize_util.plot_tree(threshold_line, distance_matrix, discovered_factors_dict, dataset, os.path.join(results_dir, size_string + ":mi_dendrogram_" + mode + identifier + ".jpg"))
+                    distance_threshold_mig = get_thresholded_matrix(distance_matrix, threshold_line)
+                    results_dict['distance_threshold_mig'] = distance_threshold_mig
+                    results_dict['distance_matrix_mig'] = list(distance_matrix)
+                    results_dict['thresholds_mig'] = list(threshold_line)
+
+                    results_dict['evaluation_on_biased_dataset'] = correlation_mode
+                    results_dict['evaluation.name'] = "entanglement_task" + identifier
+
+                    # Save the results (and all previous results in the pipeline) on disk.
+                    '''
+                    original_results_dir = os.path.join(model_dir, "postprocessed", mode, "results")
+                    results_dir_aggregate = os.path.join(model_dir, "metrics", mode, "entanglement_task" + identifier, "results")
+                    results.update_result_directory(results_dir_aggregate, "evaluation", results_dict, original_results_dir)'''
+
+
+def get_fast_adapted_representation_function(ground_truth_data, representation_function, random_state_for_few_labels,
+                                             num_labels_available):
+    scores = {}
+
+    if num_labels_available == 0:
+        scores['mean_squared_error'] = 0.0
+        scores['r2_score'] = 0.0
+        scores['mean_absolute_error'] = 0.0
+        return representation_function, scores
+    else:
+        x_train, y_train = utils.generate_batch_factor_code(
+            ground_truth_data, representation_function, num_labels_available,
+            random_state_for_few_labels, batch_size=16)
+        assert x_train.shape[1] == num_labels_available
+        assert y_train.shape[1] == num_labels_available
+
+        corr_factors = ground_truth_data.state_space.get_correlated_factors()
+        num_corr_factors = len(corr_factors)
+        if num_corr_factors < 2:
+            raise ValueError('This dataset has no correlated pair of factors of variation')
+
+        # Produce GBT feature importance only for the correlated variables
+        num_factors = num_corr_factors
+        num_codes = x_train.shape[0]
+        importance_matrix = np.zeros(shape=[num_codes, num_factors],
+                                     dtype=np.float64)
+        for i in range(num_factors):
+            model = GradientBoostingClassifier()
+            model.fit(x_train.T, y_train[corr_factors[i], :])
+            importance_matrix[:, i] = np.abs(model.feature_importances_)
+
+        # Select dimensions
+        max_codes = np.sum(importance_matrix, axis=1)
+        entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
+
+        # Disentangle the features by doing linear regression using the observations (train data)
+        X = np.transpose(x_train)
+        y = np.zeros((X.shape[1], X.shape[0]))
+        y[entangled_code_dimensions[0:len(corr_factors)], :] = y_train[corr_factors, :]
+        y = np.transpose(y)
+        reg = LinearRegression().fit(X, y)
+
+        y_pred = reg.predict(X)
+        scores['mean_squared_error'] = mean_squared_error(y, y_pred)
+        scores['r2_score'] = r2_score(y, y_pred)
+        scores['mean_absolute_error'] = mean_absolute_error(y, y_pred)
+
+        def _fast_adapted_representation_function(x):
+            representations = representation_function(x)
+            adapted_dimension_encodings = reg.predict(representations)
+            representations[:, entangled_code_dimensions[0:len(corr_factors)]] = adapted_dimension_encodings[:,
+                                                                                 entangled_code_dimensions[
+                                                                                 0:len(corr_factors)]]
+            return representations
+
+        return _fast_adapted_representation_function, scores
 
 
 def get_thresholded_matrix(distance_matrix, threshold_line):

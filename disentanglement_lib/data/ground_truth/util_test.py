@@ -47,9 +47,9 @@ class UtilTest(parameterized.TestCase, tf.test.TestCase):
 class CorrelatedSplitDiscreteStateSpaceTest(parameterized.TestCase):
 
     @parameterized.parameters([
-        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.2),
-        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.4),
-        ('shapes3d', True, [2, 5], 'object color', 'azimuth', 'line', 0.7),
+        ('shapes3d', True, [2, 3], 'object_color', 'object size', 'line', 0.2),
+        ('shapes3d', True, [2, 3], 'object_color', 'object size', 'line', 0.4),
+        ('shapes3d', True, [2, 3], 'object_color', 'object size', 'line', 0.7),
     ])
     def test_visualise_correlated_latent_factors(self, dataset_name, active_correlation, corr_indices, y_label, x_label,
                                                  corr_type, width):

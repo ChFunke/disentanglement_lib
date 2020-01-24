@@ -33,6 +33,8 @@ import numpy as np
 from six.moves import range
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+
 import gin.tf
 
 
@@ -79,7 +81,7 @@ def compute_fairness(ground_truth_data,
     scores = {}
     for num_labels in num_labels_available:
         random_state_for_few_labels = np.random.RandomState(random_seed_fast_adaptation_step)
-        adjusted_representation_function = get_fast_adapted_representation_function(ground_truth_data,
+        adjusted_representation_function, scores_fit = get_fast_adapted_representation_function(ground_truth_data,
                                                                                     representation_function,
                                                                                     random_state_for_few_labels,
                                                                                     num_labels)
@@ -121,6 +123,10 @@ def compute_fairness(ground_truth_data,
                 mean_fairness[i, j], max_fairness[i, j] = inter_group_fairness(counts)
 
         size_string = str(num_labels)
+        # Report the scores.
+        scores[size_string + ':mean_squared_error'] = scores_fit['mean_squared_error']
+        scores[size_string + ':r2_score'] = scores_fit['r2_score']
+        scores[size_string + ':mean_absolute_error'] = scores_fit['mean_absolute_error']
 
         # Report the scores.
         scores.update(compute_scores_dict(mean_fairness, size_string + ":mean_fairness"))
@@ -217,8 +223,13 @@ def inter_group_fairness(counts):
 
 def get_fast_adapted_representation_function(ground_truth_data, representation_function, random_state_for_few_labels,
                                              num_labels_available):
+    scores = {}
+
     if num_labels_available == 0:
-        return representation_function
+        scores['mean_squared_error'] = 0.0
+        scores['r2_score'] = 0.0
+        scores['mean_absolute_error'] = 0.0
+        return representation_function, scores
     else:
         x_train, y_train = utils.generate_batch_factor_code(
             ground_truth_data, representation_function, num_labels_available,
@@ -241,13 +252,9 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
             model.fit(x_train.T, y_train[corr_factors[i], :])
             importance_matrix[:, i] = np.abs(model.feature_importances_)
 
-        # Select dimensions based on mid-range value (max_val + min_val)/2
-        dimension_threshold = (np.amax(importance_matrix) + np.amin(importance_matrix)) / 2
-        entangled_code_dimensions = [dimension for dimension in range(num_codes) if
-                                     np.any(importance_matrix[dimension, :] > dimension_threshold)]
-        if len(entangled_code_dimensions) < num_corr_factors:
-            max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
-            entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
+        # Select dimensions
+        max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
+        entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
 
         # Disentangle the features by doing linear regression using the observations (train data)
         X = np.transpose(x_train)
@@ -255,6 +262,11 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
         y[entangled_code_dimensions[0:len(corr_factors)], :] = y_train[corr_factors, :]
         y = np.transpose(y)
         reg = LinearRegression().fit(X, y)
+
+        y_pred = reg.predict(X)
+        scores['mean_squared_error'] = mean_squared_error(y, y_pred)
+        scores['r2_score'] = r2_score(y, y_pred)
+        scores['mean_absolute_error'] = mean_absolute_error(y, y_pred)
 
         def _fast_adapted_representation_function(x):
             representations = representation_function(x)
@@ -264,4 +276,4 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
                                                                                  0:len(corr_factors)]]
             return representations
 
-        return _fast_adapted_representation_function
+        return _fast_adapted_representation_function, scores

@@ -125,6 +125,7 @@ def compute_fairness(ground_truth_data,
         scores[size_string + ':mean_squared_error'] = scores_fit['mean_squared_error']
         scores[size_string + ':r2_score'] = scores_fit['r2_score']
         scores[size_string + ':mean_absolute_error'] = scores_fit['mean_absolute_error']
+
         scores.update(compute_scores_dict(mean_fairness, size_string + ":mean_fairness"))
         scores.update(compute_scores_dict(max_fairness, size_string + ":max_fairness"))
     return scores

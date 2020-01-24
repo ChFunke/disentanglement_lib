@@ -23,7 +23,6 @@ from __future__ import division
 from __future__ import print_function
 from absl import logging
 from disentanglement_lib.evaluation.metrics import utils
-import disentanglement_lib.evaluation.metrics.sap_score as sap
 import numpy as np
 import itertools
 
@@ -31,6 +30,8 @@ import scipy
 from six.moves import range
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+
 import gin.tf
 
 
@@ -67,7 +68,7 @@ def compute_entanglement_metrics_afa(ground_truth_data, representation_function,
     del artifact_dir
     for num_labels in num_labels_available:
         random_state_for_few_labels = np.random.RandomState(random_seed_fast_adaptation_step)
-        adjusted_representation_function = get_fast_adapted_representation_function(ground_truth_data,
+        adjusted_representation_function, scores_fit = get_fast_adapted_representation_function(ground_truth_data,
                                                                                     representation_function,
                                                                                     random_state_for_few_labels,
                                                                                     num_labels)
@@ -93,21 +94,20 @@ def compute_entanglement_metrics_afa(ground_truth_data, representation_function,
         num_bins = 20
         discretized_mus = histogram_discretize(mus_train, num_bins)
 
-        sap_matrix = sap.compute_score_matrix(mus_train, ys_train, mus_test, ys_test, False)
         mi_matrix = utils.discrete_mutual_info(discretized_mus, ys_train)
 
         gbt_threshold_line, gbt_independent_groups, gbt_discovered_factors, gbt_distance_matrix, gbt_discovered_factors_dict = get_entanglement_curves(
             gbt_matrix)
-        sap_threshold_line, sap_independent_groups, sap_discovered_factors, sap_distance_matrix, sap_discovered_factors_dict = get_entanglement_curves(
-            sap_matrix)
         mi_threshold_line, mi_independent_groups, mi_discovered_factors, mi_distance_matrix, mi_discovered_factors_dict = get_entanglement_curves(
             mi_matrix)
 
         gbt_threshold_matrix = get_thresholded_matrix(gbt_distance_matrix, gbt_threshold_line)
-        sap_threshold_matrix = get_thresholded_matrix(sap_distance_matrix, sap_threshold_line)
-        mi_threshold_matrix = get_thresholded_matrix(mi_distance_matrix, sap_threshold_line)
+        mi_threshold_matrix = get_thresholded_matrix(mi_distance_matrix, mi_threshold_line)
 
         size_string = str(num_labels)
+        scores[size_string + ':mean_squared_error'] = scores_fit['mean_squared_error']
+        scores[size_string + ':r2_score'] = scores_fit['r2_score']
+        scores[size_string + ':mean_absolute_error'] = scores_fit['mean_absolute_error']
 
         scores[size_string + ":gbt_threshold_line"] = list(gbt_threshold_line)
         scores[size_string + ":gbt_independent_groups"] = list(gbt_independent_groups)
@@ -115,13 +115,6 @@ def compute_entanglement_metrics_afa(ground_truth_data, representation_function,
         scores[size_string + ":gbt_distance_matrix"] = list(gbt_distance_matrix)
         scores[size_string + ":gbt_discovered_factors_dict"] = {int(k): v for k, v in gbt_discovered_factors_dict.items()}
         scores[size_string + ":gbt_threshold_matrix"] = list(gbt_threshold_matrix)
-
-        scores[size_string + ":sap_threshold_line"] = list(sap_threshold_line)
-        scores[size_string + ":sap_independent_groups"] = list(sap_independent_groups)
-        scores[size_string + ":sap_discovered_factors"] = list(sap_discovered_factors)
-        scores[size_string + ":sap_distance_matrix"] = list(sap_distance_matrix)
-        scores[size_string + ":sap_discovered_factors_dict"] = {int(k): v for k, v in sap_discovered_factors_dict.items()}
-        scores[size_string + ":sap_threshold_matrix"] = list(sap_threshold_matrix)
 
         scores[size_string + ":mi_threshold_line"] = list(mi_threshold_line)
         scores[size_string + ":mi_independent_groups"] = list(mi_independent_groups)
@@ -153,8 +146,13 @@ def compute_importance_gbt(x_train, y_train, x_test, y_test):
 
 def get_fast_adapted_representation_function(ground_truth_data, representation_function, random_state_for_few_labels,
                                              num_labels_available):
+    scores = {}
+
     if num_labels_available == 0:
-        return representation_function
+        scores['mean_squared_error'] = 0.0
+        scores['r2_score'] = 0.0
+        scores['mean_absolute_error'] = 0.0
+        return representation_function, scores
     else:
         x_train, y_train = utils.generate_batch_factor_code(
             ground_truth_data, representation_function, num_labels_available,
@@ -177,13 +175,9 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
             model.fit(x_train.T, y_train[corr_factors[i], :])
             importance_matrix[:, i] = np.abs(model.feature_importances_)
 
-        # Select dimensions based on mid-range value (max_val + min_val)/2
-        dimension_threshold = (np.amax(importance_matrix) + np.amin(importance_matrix)) / 2
-        entangled_code_dimensions = [dimension for dimension in range(num_codes) if
-                                     np.any(importance_matrix[dimension, :] > dimension_threshold)]
-        if len(entangled_code_dimensions) < num_corr_factors:
-            max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
-            entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
+        # Select dimensions
+        max_codes = np.array([np.amax(importance_matrix[i, :]) for i in range(num_codes)])
+        entangled_code_dimensions = max_codes.argsort()[-num_corr_factors:]
 
         # Disentangle the features by doing linear regression using the observations (train data)
         X = np.transpose(x_train)
@@ -191,6 +185,11 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
         y[entangled_code_dimensions[0:len(corr_factors)], :] = y_train[corr_factors, :]
         y = np.transpose(y)
         reg = LinearRegression().fit(X, y)
+
+        y_pred = reg.predict(X)
+        scores['mean_squared_error'] = mean_squared_error(y, y_pred)
+        scores['r2_score'] = r2_score(y, y_pred)
+        scores['mean_absolute_error'] = mean_absolute_error(y, y_pred)
 
         def _fast_adapted_representation_function(x):
             representations = representation_function(x)
@@ -200,7 +199,7 @@ def get_fast_adapted_representation_function(ground_truth_data, representation_f
                                                                                  0:len(corr_factors)]]
             return representations
 
-        return _fast_adapted_representation_function
+        return _fast_adapted_representation_function, scores
 
 
 def histogram_discretize(target, num_bins):

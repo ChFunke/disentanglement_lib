@@ -20,10 +20,8 @@ from setuptools import setup
 
 setup(
     name='disentanglement_lib',
-    version='0.1',
-    description=('Code for the "Challenging Common Assumptions in the '
-                 'Unsupervised Learning of Disentangled Representations" '
-                 'submission'),
+    version='1.4',
+    description=('Library for research on disentangled representations.'),
     author='DisentanglementLib Authors',
     author_email='no-reply@google.com',
     url='http://github.com/google-research/disentanglement_lib',
@@ -33,14 +31,19 @@ setup(
     scripts=[
         'bin/dlib_aggregate_results',
         'bin/dlib_reproduce',
+        'bin/dlib_reason',
         'bin/dlib_visualize_dataset',
         'bin/dlib_evaluate',
+        'bin/dlib_udr',
         'bin/dlib_postprocess',
         'bin/dlib_train',
         'bin/dlib_visualize_dataset',
+        'bin/dlib_visualize_correlated_dataset',
         'bin/dlib_visualize_model',
+        'bin/dlib_visualize_model_generalisation',
+        'bin/dlib_visualize_entanglement',
         'bin/dlib_tests',
-        'bin/dlib_download_data',
+        'bin/dlib_download_data'
     ],
     install_requires=[
         'future',
@@ -56,11 +59,14 @@ setup(
         'pandas>=0.23.0',
         'scipy>=1.0.0',
         'tensorflow_hub>=0.2',
-        'tensorflow_probability',
+        'tensorflow_probability==0.7',
+        'opencv-python==4.1.1.26',
+        'h5py',
+        'seaborn',
     ],
     extras_require={
-        'tf': ['tensorflow>=1.7'],
-        'tf_gpu': ['tensorflow-gpu>=1.4.1'],
+        'tf': ['tensorflow==1.14'],
+        'tf_gpu': ['tensorflow-gpu==1.14'],
     },
     classifiers=[
         'Development Status :: 4 - Beta',

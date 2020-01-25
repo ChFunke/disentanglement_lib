@@ -30,3 +30,4 @@ encoder.num_latent = 10
 encoder.encoder_fn = @test_encoder
 decoder.decoder_fn = @test_decoder
 reconstruction_loss.loss_fn = @bernoulli_loss
+correlation.active_correlation = False

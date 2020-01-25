@@ -68,6 +68,18 @@ def visualize(model_dir,
   gin_dict = results.gin_dict(gin_config_file)
   gin.bind_parameter("dataset.name", gin_dict["dataset.name"].replace(
       "'", ""))
+  gin.bind_parameter("correlation.active_correlation", bool(gin_dict["correlation.active_correlation"] == "True"))
+  if bool(gin_dict["correlation.active_correlation"] == "True"):
+    gin.bind_parameter("correlation_details.corr_indices",
+                       list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
+    gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace(
+      "'", ""))
+    if gin.query_parameter("correlation_details.corr_type") == "plane":
+      gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                         float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+    elif gin.query_parameter("correlation_details.corr_type") == "line":
+      gin.bind_parameter("correlation_hyperparameter.line_width",
+                         float(gin_dict["correlation_hyperparameter.line_width"].replace("'", "")))
 
   # Automatically infer the activation function from gin config.
   activation_str = gin_dict["reconstruction_loss.activation"]
@@ -127,8 +139,7 @@ def visualize(model_dir,
       gfile.MakeDirs(results_dir)
     for i in range(means.shape[1]):
       pics = activation(
-          latent_traversal_1d_multi_dim(_decoder, means[i, :], None,
-                                        num_latent))
+          latent_traversal_1d_multi_dim(_decoder, means[i, :], None))
       file_name = os.path.join(results_dir, "traversals{}.jpg".format(i))
       visualize_util.grid_save_images([pics], file_name)
 

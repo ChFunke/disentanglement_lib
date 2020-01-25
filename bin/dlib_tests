@@ -26,6 +26,8 @@ python -m disentanglement_lib.utils.convolute_hub_test
 python -m disentanglement_lib.utils.results_test
 python -m disentanglement_lib.postprocessing.postprocess_test
 python -m disentanglement_lib.data.ground_truth.util_test
+python -m disentanglement_lib.evaluation.abstract_reasoning.reason_test
+python -m disentanglement_lib.evaluation.abstract_reasoning.relational_layers_test
 python -m disentanglement_lib.evaluation.evaluate_test
 python -m disentanglement_lib.evaluation.metrics.beta_vae_test
 python -m disentanglement_lib.evaluation.metrics.factor_vae_test
@@ -36,6 +38,8 @@ python -m disentanglement_lib.evaluation.metrics.dci_test
 python -m disentanglement_lib.evaluation.metrics.sap_score_test
 python -m disentanglement_lib.evaluation.metrics.utils_test
 python -m disentanglement_lib.evaluation.metrics.unsupervised_metrics_test
+python -m disentanglement_lib.evaluation.udr.evaluate_test
+python -m disentanglement_lib.evaluation.udr.metrics.udr_test
 python -m disentanglement_lib.visualize.visualize_util_test
 python -m disentanglement_lib.visualize.visualize_dataset_test
 python -m disentanglement_lib.visualize.visualize_model_test

@@ -102,6 +102,22 @@ def postprocess(model_dir,
     with gin.unlock_config():
       gin.bind_parameter("dataset.name", gin_dict["dataset.name"].replace(
           "'", ""))
+  if gin.query_parameter("correlation.active_correlation") == "auto":
+    # Obtain the correlation parameters from the gin config of the previous step.
+    gin_config_file = os.path.join(model_dir, "results", "gin", "train.gin")
+    gin_dict = results.gin_dict(gin_config_file)
+    with gin.unlock_config():
+      gin.bind_parameter("correlation.active_correlation", bool(gin_dict["correlation.active_correlation"] == "True"))
+      if gin.query_parameter("correlation.active_correlation"):
+        gin.bind_parameter("correlation_details.corr_indices", list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
+        gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace("'", ""))
+        if gin.query_parameter("correlation_details.corr_type") == "plane":
+          gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                             float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+        elif gin.query_parameter("correlation_details.corr_type") == "line":
+          gin.bind_parameter("correlation_hyperparameter.line_width",
+                             float(gin_dict["correlation_hyperparameter.line_width"].replace("'", "")))
+
   dataset = named_data.get_named_ground_truth_data()
 
   # Path to TFHub module of previously trained model.

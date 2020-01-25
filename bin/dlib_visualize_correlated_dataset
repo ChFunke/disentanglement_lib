@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+# coding=utf-8
+# Copyright 2018 The DisentanglementLib Authors.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Script that will visualize the generative factors of a data set."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from absl import app
+from absl import flags
+import gin.tf
+import numpy as np
+import os
+from tensorflow import gfile
+
+from disentanglement_lib.visualize import visualize_dataset
+from disentanglement_lib.data.ground_truth import named_data
+from disentanglement_lib.visualize import visualize_util
+
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string("name", "dsprites_full",
+                    "Name of the data set to visualize.")
+flags.DEFINE_string("path", "dataset_visualizations",
+                    "Directory in which to save the visualizations.")
+
+
+def main(unused_argv):
+    corr_indices = [5, 6]
+    gin_config_files = []
+    gin_bindings = []
+    gin.parse_config_files_and_bindings(gin_config_files, gin_bindings)
+    with gin.unlock_config():
+        gin.bind_parameter("dataset.name", "mpi3d_real")
+        gin.bind_parameter("correlation.active_correlation", True)
+        gin.bind_parameter("correlation_details.corr_indices", corr_indices)
+        gin.bind_parameter("correlation_details.corr_type", "line")
+        gin.bind_parameter("correlation_hyperparameter.line_width", 0.2)
+
+    data = named_data.get_named_ground_truth_data("mpi3d_real")
+    random_state = np.random.RandomState(0)
+
+    # Create output folder if necessary.
+    path = os.path.join(FLAGS.path, "mpi3d_real")
+    if not gfile.IsDirectory(path):
+        gfile.MakeDirs(path)
+
+    base_factor = data.sample_factors(1, random_state)
+
+    for i in range(data.num_factors):
+        if i not in corr_indices:
+            factors = data.sample_factors(49, random_state)
+            factors[0, :] = 0
+            indices = [j for j in range(data.num_factors) if j not in corr_indices]
+            factors[:, indices] = base_factor[0, indices]
+            images = data.sample_observations_from_factors(factors, random_state)
+            visualize_util.grid_save_images(images, os.path.join(path, "variations_of_factor%s.png" % i))
+
+        # Create animations.
+    for i in range(1):
+        images = []
+        for j, num_atoms in enumerate(data.factors_num_values):
+            factors = np.repeat(base_factor, 20, axis=0)
+            factors[:, j] = visualize_util.cycle_factor(base_factor[0, j], num_atoms,
+                                                        20)
+            if j in corr_indices:
+                other_index = [n for n in corr_indices if n != j]
+                factors[:, other_index[0]] = factors[:, j]
+            images.append(data.sample_observations_from_factors(factors,
+                                                                random_state))
+        visualize_util.save_animation(np.array(images),
+                                      os.path.join(path, "animation%d.gif" % i),
+                                      10)
+
+    gin.clear_config()
+
+
+if __name__ == "__main__":
+    app.run(main)

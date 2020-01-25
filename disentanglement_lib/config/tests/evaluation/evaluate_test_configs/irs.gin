@@ -20,3 +20,4 @@ irs.num_train=100
 irs.batch_size=16
 discretizer.num_bins=20
 discretizer.discretizer_fn=@histogram_discretizer
+correlation.active_correlation = False

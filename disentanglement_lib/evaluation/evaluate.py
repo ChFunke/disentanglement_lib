@@ -17,19 +17,34 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import inspect
 import os
 import time
+import warnings
 from disentanglement_lib.data.ground_truth import named_data
 from disentanglement_lib.evaluation.metrics import beta_vae  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import dci  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import dci_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import dci_corr_submetric_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import dci_afa_extended_representation  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import robust_dci_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import entanglement_metrics_afa_mi  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import fairness_afa  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import fairness_afa_score  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import fairness_afa_partial  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import dci_afa_partial  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import downstream_task  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import factor_vae  # pylint: disable=unused-import
+from disentanglement_lib.evaluation.metrics import fairness  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import irs  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import mig  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import modularity_explicitness  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import reduced_downstream_task  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import sap_score  # pylint: disable=unused-import
 from disentanglement_lib.evaluation.metrics import unsupervised_metrics  # pylint: disable=unused-import
+
+
 from disentanglement_lib.utils import results
 import numpy as np
 import tensorflow as tf
@@ -103,12 +118,27 @@ def evaluate(model_dir,
   # is present.
   if gin.query_parameter("dataset.name") == "auto":
     # Obtain the dataset name from the gin config of the previous step.
-    gin_config_file = os.path.join(model_dir, "results", "gin",
-                                   "postprocess.gin")
+    gin_config_file = os.path.join(model_dir, "results", "gin", "train.gin")
     gin_dict = results.gin_dict(gin_config_file)
     with gin.unlock_config():
       gin.bind_parameter("dataset.name", gin_dict["dataset.name"].replace(
           "'", ""))
+  if gin.query_parameter("correlation.active_correlation") == "auto":
+    # Obtain the correlation parameters from the gin config of the previous step.
+    gin_config_file = os.path.join(model_dir, "results", "gin", "train.gin")
+    gin_dict = results.gin_dict(gin_config_file)
+    with gin.unlock_config():
+      gin.bind_parameter("correlation.active_correlation", bool(gin_dict["correlation.active_correlation"] == "True"))
+      if gin.query_parameter("correlation.active_correlation"):
+        gin.bind_parameter("correlation_details.corr_indices", list(map(int, gin_dict["correlation_details.corr_indices"][1:-1].split(","))))
+        gin.bind_parameter("correlation_details.corr_type", gin_dict["correlation_details.corr_type"].replace("'", ""))
+        if gin.query_parameter("correlation_details.corr_type") == "plane":
+          gin.bind_parameter("correlation_hyperparameter.bias_plane",
+                             float(gin_dict["correlation_hyperparameter.bias_plane"].replace("'", "")))
+        elif gin.query_parameter("correlation_details.corr_type") == "line":
+          gin.bind_parameter("correlation_hyperparameter.line_width",
+                             float(gin_dict["correlation_hyperparameter.line_width"].replace("'", "")))
+
   dataset = named_data.get_named_ground_truth_data()
 
   # Path to TFHub module of previously trained representation.
@@ -121,10 +151,23 @@ def evaluate(model_dir,
       return np.array(output["default"])
 
     # Computes scores of the representation based on the evaluation_fn.
-    results_dict = evaluation_fn(
-        dataset,
-        _representation_function,
-        random_state=np.random.RandomState(random_seed))
+    if _has_kwarg_or_kwargs(evaluation_fn, "artifact_dir"):
+      artifact_dir = os.path.join(model_dir, "artifacts")
+      results_dict = evaluation_fn(
+          dataset,
+          _representation_function,
+          random_state=np.random.RandomState(random_seed),
+          artifact_dir=artifact_dir)
+    else:
+      # Legacy code path to allow for old evaluation metrics.
+      warnings.warn(
+          "Evaluation function does not appear to accept an"
+          " `artifact_dir` argument. This may not be compatible with "
+          "future versions.", DeprecationWarning)
+      results_dict = evaluation_fn(
+          dataset,
+          _representation_function,
+          random_state=np.random.RandomState(random_seed))
 
   # Save the results (and all previous results in the pipeline) on disk.
   original_results_dir = os.path.join(model_dir, "results")
@@ -132,3 +175,14 @@ def evaluate(model_dir,
   results_dict["elapsed_time"] = time.time() - experiment_timer
   results.update_result_directory(results_dir, "evaluation", results_dict,
                                   original_results_dir)
+
+
+def _has_kwarg_or_kwargs(f, kwarg):
+  """Checks if the function has the provided kwarg or **kwargs."""
+  # For gin wrapped functions, we need to consider the wrapped function.
+  if hasattr(f, "__wrapped__"):
+    f = f.__wrapped__
+  args, _, kwargs, _ = inspect.getargspec(f)
+  if kwarg in args or kwargs is not None:
+    return True
+  return False

@@ -19,3 +19,5 @@ evaluation.random_seed = 0
 beta_vae_sklearn.batch_size=10
 beta_vae_sklearn.num_train=100
 beta_vae_sklearn.num_eval=100
+correlation.active_correlation = False
+

@@ -20,3 +20,4 @@ factor_vae_score.num_variance_estimate=100
 factor_vae_score.num_train=100
 factor_vae_score.num_eval=100
 factor_vae_score.batch_size=5
+correlation.active_correlation = False

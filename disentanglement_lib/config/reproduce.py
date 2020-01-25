@@ -18,10 +18,22 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from disentanglement_lib.config.abstract_reasoning_study_v1.stage1 import sweep as abstract_reasoning_study_v1
+from disentanglement_lib.config.fairness_study_v1 import sweep as fairness_study_v1
 from disentanglement_lib.config.tests import sweep as tests
 from disentanglement_lib.config.unsupervised_study_v1 import sweep as unsupervised_study_v1
+from disentanglement_lib.config.correlated_factors_study_v1 import sweep as correlated_factors_study_v1
+from disentanglement_lib.config.correlated_factors_study_dry_run import sweep as correlated_factors_study_dry_run
+from disentanglement_lib.config.correlated_factors_study_beta import sweep as correlated_factors_study_beta
 
 STUDIES = {
+    "correlated_factors_study_dry_run": correlated_factors_study_dry_run.CorrelatedFactorsStudyDryRun(),
+    "correlated_factors_study_beta": correlated_factors_study_beta.CorrelatedFactorsStudyBeta(),
+    "correlated_factors_study_v1": correlated_factors_study_v1.CorrelatedFactorsStudyV1(),
     "unsupervised_study_v1": unsupervised_study_v1.UnsupervisedStudyV1(),
+    "abstract_reasoning_study_v1":
+        abstract_reasoning_study_v1.AbstractReasoningStudyV1(),
+    "fairness_study_v1":
+        fairness_study_v1.FairnessStudyV1(),
     "test": tests.TestStudy(),
 }

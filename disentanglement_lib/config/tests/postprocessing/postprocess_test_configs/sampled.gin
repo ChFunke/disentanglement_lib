@@ -16,3 +16,4 @@
 postprocess.postprocess_fn = @sampled_representation
 dataset.name="dummy_data"
 postprocess.random_seed = 0
+correlation.active_correlation = False

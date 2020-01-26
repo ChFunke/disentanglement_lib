@@ -23,11 +23,12 @@ from disentanglement_lib.data.ground_truth import dummy_data
 from disentanglement_lib.data.ground_truth import mpi3d
 from disentanglement_lib.data.ground_truth import norb
 from disentanglement_lib.data.ground_truth import shapes3d
+from disentanglement_lib.data.ground_truth import tabular
 import gin.tf
 
 
 @gin.configurable("dataset")
-def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
+def get_named_ground_truth_data(name):
   """Returns ground truth data set based on name.
 
   Args:
@@ -39,27 +40,14 @@ def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
 
   if name == "dsprites_full":
     return dsprites.DSprites([1, 2, 3, 4, 5])
-  elif name == "correlated_dsprites_full":
-    return dsprites.CorrelatedDSprites([1, 2, 3, 4, 5], corr_indices, corr_type)
   elif name == "dsprites_noshape":
     return dsprites.DSprites([2, 3, 4, 5])
-  elif name == "correlated_dsprites_noshape":
-    return dsprites.CorrelatedDSprites([2, 3, 4, 5], corr_indices, corr_type)
   elif name == "color_dsprites":
     return dsprites.ColorDSprites([1, 2, 3, 4, 5])
-  elif name == "correlated_color_dsprites":
-    return dsprites.CorrelatedColorDSprites([1, 2, 3, 4, 5], corr_indices,
-                                            corr_type)
   elif name == "noisy_dsprites":
     return dsprites.NoisyDSprites([1, 2, 3, 4, 5])
-  elif name == "correlated_noisy_dsprites":
-    return dsprites.CorrelatedNoisyDSprites([1, 2, 3, 4, 5], corr_indices,
-                                            corr_type)
   elif name == "scream_dsprites":
     return dsprites.ScreamDSprites([1, 2, 3, 4, 5])
-  elif name == "correlated_scream_dsprites":
-    return dsprites.CorrelatedScreamDSprites([1, 2, 3, 4, 5], corr_indices,
-                                             corr_type)
   elif name == "smallnorb":
     return norb.SmallNORB()
   elif name == "cars3d":
@@ -76,5 +64,7 @@ def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
     return shapes3d.Shapes3D()
   elif name == "dummy_data":
     return dummy_data.DummyData()
+  elif name == "adult":
+    return tabular.Adult()
   else:
-    raise ValueError("Invalid data set name: " + name + ".")
+    raise ValueError("Invalid data set name.")

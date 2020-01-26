@@ -26,7 +26,11 @@ import math
 
 
 @gin.configurable("correlation", blacklist=["factor_sizes", "latent_factor_indices"])
-def get_state_space(factor_sizes, latent_factor_indices, active_correlation=False):
+def get_state_space(factor_sizes, latent_factor_indices,
+                    active_correlation=False, data_dict=None):
+    if data_dict is not None:  # (U,A,Y) ~ p(U|A,Y)p(A,Y) where U indexes X
+      return FactorizedSplitDiscreteStateSpace(
+        factor_sizes, latent_factor_indices, data_dict=data_dict)
     if not active_correlation:
         return SplitDiscreteStateSpace(factor_sizes, latent_factor_indices)
     else:
@@ -276,10 +280,176 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
         return [self.corr_indices[0] - shift, self.corr_indices[1] - shift]
 
 
-class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
-  """State space with two correlated latent factors.
+# class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
+#   """State space with two correlated latent factors.
+#
+#   Pick two latent factor indices to be correlated
+#   Args:
+#     corr_indices: The two latent factor indices to correalte.
+#     corr_type: plane, ellipse, or line (cf. Chen et al 2018 section 6.1)
+#     corr_amount: Relative amount to corr the log probability.
+#
+#   Raises:
+#     ValueError: if an invalid corr type or corr indices are provided.
+#   """
+#
+#   def __init__(self, factor_sizes, latent_factor_indices, corr_indices,
+#                corr_type):
+#     lfi = latent_factor_indices
+#     super(CorrelatedSplitDiscreteStateSpace, self).__init__(factor_sizes, lfi)
+#
+#     if len(corr_indices) != 2 or corr_indices[0] == corr_indices[1]:
+#       raise ValueError('Invalid corr indices given.')
+#
+#     for ci in corr_indices:
+#       if ci == 0:
+#         msg = 'Correlating the 0th factor (color) is not currently supported.'
+#         raise ValueError(msg)
+#
+#       if not ci in latent_factor_indices:
+#         msg = 'Invalid corr_indices: one of the specified indices is not ' + \
+#           'a member of the latent_factor_indices.'
+#         raise ValueError(msg)
+#
+#     self.corr_indices = corr_indices
+#     self.corr_type = corr_type
+#     self.joint_prob = self._get_joint_prob()
+#
+#   def _get_joint_prob(self):
+#     corr_factor_sizes = self.factor_sizes[self.corr_indices]
+#
+#     if self.corr_type == 'plane':  # equivalent to Chen et al 2018 type B
+#       bias = 0.5  # sets diff between min and max prob
+#       unnormalized_marg_prob_0 = np.linspace(0., 1., corr_factor_sizes[0])
+#       unnormalized_marg_prob_0 += bias
+#       unnormalized_marg_prob_1 = np.linspace(0., 1., corr_factor_sizes[1])
+#       unnormalized_marg_prob_1 += bias
+#       unnormalized_joint_prob = np.outer(
+#         unnormalized_marg_prob_0, unnormalized_marg_prob_1
+#       )
+#
+#     elif self.corr_type == 'ellipse':  # equivalent to Chen et al 2018 type C
+#       import cv2
+#
+#       for sfs in corr_factor_sizes:
+#         if sfs < 12:
+#           from warnings import warn
+#           msg = 'Ellipse corr type (C) not recommended for factors of variation ' + \
+#                 'with fewer than 12 categories.'
+#           warn(msg)
+#
+#       n_x, n_y = corr_factor_sizes
+#
+#       unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
+#
+#       center_x = n_x // 2
+#       center_y = n_y // 2
+#
+#       r_maj = n_x // 4
+#       r_min = n_y // 4
+#
+#       width = 1  # this will get smoothed out later
+#
+#       cv2.ellipse(unnormalized_joint_prob, (center_y, center_x), (r_maj, r_min), 90, 0, 360,
+#                   255, width)
+#
+#       kernel_width = min(corr_factor_sizes) // 5
+#       if not kernel_width % 2:  # kernels widths must be odd
+#         kernel_width += 1
+#
+#       unnormalized_joint_prob = cv2.GaussianBlur(
+#         unnormalized_joint_prob, (kernel_width, kernel_width),0)
+#       unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
+#
+#     elif self.corr_type == 'line':  # equivalent to Chen et al 2018 type D
+#       import cv2
+#
+#       for sfs in corr_factor_sizes:
+#         if sfs < 12:
+#           from warnings import warn
+#           msg = 'Line corr type (C) not recommended for factors of variation ' \
+#                 + 'with fewer than 12 categories.'
+#           warn(msg)
+#
+#
+#       # Create a black image
+#       unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
+#
+#       width = 2  # this will get smoothed out later
+#
+#       offset = corr_factor_sizes[0] // 6
+#       start = (0, offset)
+#       end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
+#
+#       cv2.line(unnormalized_joint_prob , start, end, 255, width)
+#
+#       kernel_width = min(corr_factor_sizes) // 5
+#       if not kernel_width % 2:  # kernels widths must be odd
+#         kernel_width += 1
+#
+#       unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob,(kernel_width, kernel_width),0)
+#       unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
+#
+#     elif self.corr_type == 'power':  # based on Creager et al ICML 2019
+#       first_factor = 1.
+#       second_factor = 3.
+#       # NOTE: The order of the indices now matters since they are each raised to
+#       #       a different power in the unnormalized density.
+#       unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.float_)
+#       Ni, Nj = corr_factor_sizes[0], corr_factor_sizes[1]
+#       for i in range(Ni):
+#         for j in range(Nj):
+#           unnormalized_joint_prob[i, j] = \
+#                   (float(i) / Ni) ** first_factor \
+#                   + (float(j) / Nj) ** second_factor
+#
+#     else:
+#       raise ValueError("Invalid corr type.")
+#
+#     # normalize
+#     joint_prob = unnormalized_joint_prob / unnormalized_joint_prob.sum()
+#
+#     return joint_prob
+#
+#   def _sample_correlated_factors(self, num, random_state):
+#
+#     corr_factor_sizes = self.factor_sizes[self.corr_indices]
+#     n_x, n_y = corr_factor_sizes
+#     pairs = np.indices(dimensions=(n_x, n_y))
+#     pairs = pairs.reshape(2, -1).T
+#
+#     inds = random_state.choice(np.arange(n_x * n_y),
+#                                p=self.joint_prob.reshape(-1),
+#                                size=num, replace=True)
+#     samps = pairs[inds]
+#
+#     return samps
+#
+#   def sample_latent_factors(self, num, random_state):
+#     """Sample a batch of the latent factors."""
+#     factors = np.zeros(
+#         shape=(num, len(self.latent_factor_indices)), dtype=np.int64)
+#
+#     correlated_samples  = self._sample_correlated_factors(num, random_state)
+#     # figure out how to properly index the array factors
+#     idx = np.argwhere(np.isin(self.latent_factor_indices, self.corr_indices))
+#     idx = idx.flatten()
+#     factors[:, idx] = correlated_samples
+#
+#     for pos, i in enumerate(self.latent_factor_indices):
+#       if not i in self.corr_indices:
+#         factors[:, pos] = self._sample_factor(i, num, random_state)
+#
+#     return factors
+#
 
-  Pick two latent factor indices to be correlated
+class FactorizedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
+  """State space for use with tabular data.
+
+  FoVs are (U, A, Y) where U represents an index into the features X,
+  A represnts the sensitive attribute, and Y represnts the target label. The
+  joint distribution over FoV factorizes as p(U,A,Y) = p(U|A,Y)p(A,Y),
+  where p(A,Y) are chosen by the empirical distribution over
   Args:
     corr_indices: The two latent factor indices to correalte.
     corr_type: plane, ellipse, or line (cf. Chen et al 2018 section 6.1)
@@ -289,154 +459,91 @@ class CorrelatedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
     ValueError: if an invalid corr type or corr indices are provided.
   """
 
-  def __init__(self, factor_sizes, latent_factor_indices, corr_indices,
-               corr_type):
+  def __init__(self, factor_sizes, latent_factor_indices, data_dict):
     lfi = latent_factor_indices
-    super(CorrelatedSplitDiscreteStateSpace, self).__init__(factor_sizes, lfi)
-
-    if len(corr_indices) != 2 or corr_indices[0] == corr_indices[1]:
-      raise ValueError('Invalid corr indices given.')
-
-    for ci in corr_indices:
-      if ci == 0:
-        msg = 'Correlating the 0th factor (color) is not currently supported.'
-        raise ValueError(msg)
-
-      if not ci in latent_factor_indices:
-        msg = 'Invalid corr_indices: one of the specified indices is not ' + \
-          'a member of the latent_factor_indices.'
-        raise ValueError(msg)
-
-    self.corr_indices = corr_indices
-    self.corr_type = corr_type
-    self.joint_prob = self._get_joint_prob()
-
-  def _get_joint_prob(self):
-    corr_factor_sizes = self.factor_sizes[self.corr_indices]
-
-    if self.corr_type == 'plane':  # equivalent to Chen et al 2018 type B
-      bias = 0.5  # sets diff between min and max prob
-      unnormalized_marg_prob_0 = np.linspace(0., 1., corr_factor_sizes[0])
-      unnormalized_marg_prob_0 += bias
-      unnormalized_marg_prob_1 = np.linspace(0., 1., corr_factor_sizes[1])
-      unnormalized_marg_prob_1 += bias
-      unnormalized_joint_prob = np.outer(
-        unnormalized_marg_prob_0, unnormalized_marg_prob_1
-      )
-
-    elif self.corr_type == 'ellipse':  # equivalent to Chen et al 2018 type C
-      import cv2
-
-      for sfs in corr_factor_sizes:
-        if sfs < 12:
-          from warnings import warn
-          msg = 'Ellipse corr type (C) not recommended for factors of variation ' + \
-                'with fewer than 12 categories.'
-          warn(msg)
-
-      n_x, n_y = corr_factor_sizes
-
-      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
-
-      center_x = n_x // 2
-      center_y = n_y // 2
-
-      r_maj = n_x // 4
-      r_min = n_y // 4
-
-      width = 1  # this will get smoothed out later
-
-      cv2.ellipse(unnormalized_joint_prob, (center_y, center_x), (r_maj, r_min), 90, 0, 360,
-                  255, width)
-
-      kernel_width = min(corr_factor_sizes) // 5
-      if not kernel_width % 2:  # kernels widths must be odd
-        kernel_width += 1
-
-      unnormalized_joint_prob = cv2.GaussianBlur(
-        unnormalized_joint_prob, (kernel_width, kernel_width),0)
-      unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
-
-    elif self.corr_type == 'line':  # equivalent to Chen et al 2018 type D
-      import cv2
-
-      for sfs in corr_factor_sizes:
-        if sfs < 12:
-          from warnings import warn
-          msg = 'Line corr type (C) not recommended for factors of variation ' \
-                + 'with fewer than 12 categories.'
-          warn(msg)
-
-
-      # Create a black image
-      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.uint8)
-
-      width = 2  # this will get smoothed out later
-
-      offset = corr_factor_sizes[0] // 6
-      start = (0, offset)
-      end = (corr_factor_sizes[1], corr_factor_sizes[0] - offset)
-
-      cv2.line(unnormalized_joint_prob , start, end, 255, width)
-
-      kernel_width = min(corr_factor_sizes) // 5
-      if not kernel_width % 2:  # kernels widths must be odd
-        kernel_width += 1
-
-      unnormalized_joint_prob = cv2.GaussianBlur(unnormalized_joint_prob,(kernel_width, kernel_width),0)
-      unnormalized_joint_prob = unnormalized_joint_prob.astype(np.float_)
-
-    elif self.corr_type == 'power':  # based on Creager et al ICML 2019
-      first_factor = 1.
-      second_factor = 3.
-      # NOTE: The order of the indices now matters since they are each raised to
-      #       a different power in the unnormalized density.
-      unnormalized_joint_prob = np.zeros(corr_factor_sizes, np.float_)
-      Ni, Nj = corr_factor_sizes[0], corr_factor_sizes[1]
-      for i in range(Ni):
-        for j in range(Nj):
-          unnormalized_joint_prob[i, j] = \
-                  (float(i) / Ni) ** first_factor \
-                  + (float(j) / Nj) ** second_factor
-
-    else:
-      raise ValueError("Invalid corr type.")
-
-    # normalize
-    joint_prob = unnormalized_joint_prob / unnormalized_joint_prob.sum()
-
-    return joint_prob
+    super(FactorizedSplitDiscreteStateSpace, self).__init__(factor_sizes, lfi)
+    self.x = data_dict['x']
+    self.y = data_dict['y']
+    self.a = data_dict['a']
+    AY = np.hstack((self.a, self.y))  # all instances of (A, Y)
+    # compute empirical joint probability p(A, Y)
+    p_AY = np.zeros((2, 2))
+    for a in range(2):
+      for y in range(2):
+        p_AY[a, y] = np.logical_and(
+          AY[:, 0] == a,
+          AY[:, 1] == y,
+        ).sum()  # counts for examples with A=a and Y=y
+    p_AY = p_AY / p_AY.sum()
+    # ## Compute factorized joint probability p(U, A, Y) = p(U|A, Y)p(A, Y) with
+    # # p(U|A=a, Y=y) = Uniform(len(X|A=a, Y=y))
+    # p_UAY = np.zeros((len(self.x), 2, 2))
+    # for a in range(2):
+    #   for y in range(2):
+    #     idx = np.logical_and(
+    #       AY[:, 0] == a,
+    #       AY[:, 1] == y,
+    #       )  # indices of examples with A=a and Y=y
+    #     p_UAY[idx, a, y] = 1. / sum(idx)
+    # Build lookup table of indices (into X) conditioned on (A, Y)
+    U_cond_AY = dict()
+    for a in range(2):
+      for y in range(2):
+        idx = np.arange(len(AY))[
+          np.logical_and(
+          AY[:, 0] == a,
+          AY[:, 1] == y,
+          )]  # indices of examples with A=a and Y=y
+        U_cond_AY[(a, y)] = idx
+    self.U_cond_AY = U_cond_AY
+    self.corr_indices = (1, 2)  # The labels (A, Y) considered correlated FoV...
+    self.joint_prob = p_AY  # ...and this is their joint probability distn.
 
   def _sample_correlated_factors(self, num, random_state):
+      corr_factor_sizes = [self.factor_sizes[self.corr_indices[0]], self.factor_sizes[self.corr_indices[1]]]
+      # corr_factor_sizes = self.factor_sizes[self.corr_indices]
+      n_x, n_y = corr_factor_sizes
+      pairs = np.indices(dimensions=(n_x, n_y))
+      pairs = pairs.reshape(2, -1).T
 
-    corr_factor_sizes = self.factor_sizes[self.corr_indices]
-    n_x, n_y = corr_factor_sizes
-    pairs = np.indices(dimensions=(n_x, n_y))
-    pairs = pairs.reshape(2, -1).T
-
-    inds = random_state.choice(np.arange(n_x * n_y),
-                               p=self.joint_prob.reshape(-1),
-                               size=num, replace=True)
-    samps = pairs[inds]
-
-    return samps
+      inds = random_state.choice(np.arange(n_x * n_y),
+                                 p=self.joint_prob.reshape(-1),
+                                 size=num, replace=True)
+      samps = pairs[inds]
+      return samps
 
   def sample_latent_factors(self, num, random_state):
     """Sample a batch of the latent factors."""
     factors = np.zeros(
         shape=(num, len(self.latent_factor_indices)), dtype=np.int64)
-
-    correlated_samples  = self._sample_correlated_factors(num, random_state)
+    correlated_samples = self._sample_correlated_factors(num, random_state)
     # figure out how to properly index the array factors
     idx = np.argwhere(np.isin(self.latent_factor_indices, self.corr_indices))
     idx = idx.flatten()
     factors[:, idx] = correlated_samples
-
-    for pos, i in enumerate(self.latent_factor_indices):
-      if not i in self.corr_indices:
-        factors[:, pos] = self._sample_factor(i, num, random_state)
-
+    for i, correlated_sample in enumerate(correlated_samples):
+      AY = tuple(correlated_sample)
+      u = random_state.choice(
+        self.U_cond_AY[AY]
+      )  # draw U_i ~ p( U|A_i, Y_i)
+      factors[i, 0] = u
     return factors
+
+  # def sample_all_factors(self, latent_factors, random_state):
+  #    """Samples the remaining factors based on the latent factors."""
+  #    raise NotImplementedError
+  #    num_samples = latent_factors.shape[0]
+  #    all_factors = np.zeros(
+  #        shape=(num_samples, self.num_factors), dtype=np.int64)
+  #    all_factors[:, self.latent_factor_indices] = latent_factors
+  #    # Complete all the other factors
+  #    for i in self.observation_factor_indices:
+  #        all_factors[:, i] = self._sample_factor(i, num_samples, random_state)
+  #    return all_factors
+  #
+  # def _sample_factor(self, i, num, random_state):
+  #   factors = self.sample_factors(num, random_state)
+  #   return factors[:, i]
 
 
 class StateSpaceAtomIndex(object):

@@ -290,12 +290,7 @@ class FactorizedSplitDiscreteStateSpace(SplitDiscreteStateSpace):
   joint distribution over FoV factorizes as p(U,A,Y) = p(U|A,Y)p(A,Y),
   where p(A,Y) are chosen by the empirical distribution over
   Args:
-    corr_indices: The two latent factor indices to correalte.
-    corr_type: plane, ellipse, or line (cf. Chen et al 2018 section 6.1)
-    corr_amount: Relative amount to corr the log probability.
-
-  Raises:
-    ValueError: if an invalid corr type or corr indices are provided.
+    data_dict: dict containing the data np.ndarrays (X, A, Y) as items.
   """
 
   def __init__(self, factor_sizes, latent_factor_indices, data_dict):

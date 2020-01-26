@@ -48,8 +48,9 @@ class Adult(ground_truth_data.GroundTruthData):
   sensitive attribute and target label as FoV and draw the remaining (observed)
   features conditioned on the choice of sensitive and target labels. The FoV
   are formatted as follows:
-  0 - sex (2 different values; 0 indicates Female and 1 indicates Male)
-  1 - income > 50k (2 different values)
+  0 - index (num_examples different values; indexes observed feature vectors)
+  1 - sex (2 different values; 0 indicates Female and 1 indicates Male)
+  2 - income > 50k (2 different values)
   """
 
   validation_size = 500  # a few train data used as FoV labels for adaptation

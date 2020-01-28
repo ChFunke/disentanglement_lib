@@ -1,0 +1,14 @@
+#!/bin/bash
+# Note: run this from the root of repo
+
+# If this script runs without errors, then there are no NaNs in the dataset.
+
+for split in train test validation
+do
+  python examples/sample_adult.py \
+    --gin_file='examples/data.gin' \
+    --gin_param='dataset.name = "adult"' \
+    --gin_param='adult_details.split="'$split'"' \
+    --gin_param="adult_details.seed=0" \
+    --gin_param="get_dataset_loader.batch_size = 32"
+done

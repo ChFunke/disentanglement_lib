@@ -26,7 +26,7 @@ import gin.tf
 
 
 @gin.configurable("dataset")
-def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
+def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4], col=None):
   """Returns ground truth data set based on name.
 
   Args:
@@ -46,6 +46,11 @@ def get_named_ground_truth_data(name, corr_type='plane', corr_indices=[3, 4]):
     return dsprites.CorrelatedDSprites([2, 3, 4, 5], corr_indices, corr_type)
   elif name == "color_dsprites":
     return dsprites.ColorDSprites([1, 2, 3, 4, 5])
+  elif name == "backgroundcolor_dsprites":
+    return dsprites.BackgroundColorDSprites([1, 2, 3, 4, 5, 6], col)
+  elif name == "correlated_backgroundcolor_dsprites":
+    return dsprites.CorrelatedBackgroundColorDSprites([1, 2, 3, 4, 5, 6], corr_indices,
+                                            corr_type)
   elif name == "correlated_color_dsprites":
     return dsprites.CorrelatedColorDSprites([1, 2, 3, 4, 5], corr_indices,
                                             corr_type)
